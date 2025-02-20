@@ -1,0 +1,57 @@
+@import "~taro-ui/dist/style/components";
+@import "~taro-ui/dist/style/components/card.scss";
+@import "~taro-ui/dist/style/components/input-number.scss";
+@import "~taro-ui/dist/style/components/icon.scss";
+.order-detail-container {
+  padding: 20px;
+}
+
+.order-card {
+  margin-bottom: 20px;
+  
+  &:last-of-type {
+    margin-bottom: 16px; // Space before the back button
+  }
+}
+
+.order-info {
+  margin-bottom: 20px;
+  color: #FFFFFF; // Updated text color for better contrast
+  font-size: 16px;
+}
+
+.order-info Text {
+  display: block; // Ensure each piece of info is on a new line
+  margin-bottom: 10px; // Spacing between text items
+}
+
+.qr-code-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-top: 20px;
+}
+
+.qr-code {
+  width: 200px;
+  height: 200px;
+}
+
+.back-button {
+  margin-bottom: 20px;
+}
+
+.depature-info {
+    height: 100px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden; /* Ensure text fits inside the container */
+}
+.depature-text {
+    font-size: 100%; /* Auto-adjust font size */
+    font-weight: bold;
+    white-space: nowrap; /* Prevent text from wrapping */
+    overflow: hidden; /* Hide overflow text */
+    text-overflow: ellipsis; /* Show ellipsis for overflow text */
+}

@@ -1,0 +1,210 @@
+@import "~taro-ui/dist/style/components";
+@import "~taro-ui/dist/style/components/form.scss";
+@import "~taro-ui/dist/style/components/list.scss";
+@import "~taro-ui/dist/style/components/grid.scss";
+@import "~taro-ui/dist/style/components/tab-bar.scss";
+@import "~taro-ui/dist/style/components/badge.scss";
+@import "~taro-ui/dist/style/components/icon.scss";
+@import "~taro-ui/dist/style/components/input.scss";
+
+.body{
+  background-color: #f8f8f8;
+}
+
+
+.container {
+  padding: 16px;
+  background-color: rgb(255, 255, 255);
+  margin:20px;
+  
+  .at-accordion {
+    margin-bottom: 16px;
+    
+    .at-list {
+      .at-card {
+        margin-bottom: 16px;
+        
+        &:last-child {
+          margin-bottom: 0;
+        }
+      }
+    }
+  }
+}
+
+.qr-code-container {
+  display: flex;
+  justify-content: center;
+  padding: 16px 0;
+  
+  .qr-code {
+    width: 200px;
+    height: 200px;
+  }
+}
+
+.empty-list {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  font-size: 16px;
+  color: #666;
+}
+
+.at-card {
+  margin-bottom: 15px;
+}
+
+.at-card__title {
+  font-weight: bold;
+  font-size: 16px;
+}
+
+.at-list__item {
+  padding: 10px 0;
+}
+
+.at-list__item-extra {
+  color: #666;
+}
+
+.selected-card {
+  border: 2px solid #6190e8; /* Highlight selected card with blue */
+  background-color: #eef5ff;
+}
+
+.ticket-card {
+  background-color: white;
+  padding: 20px;
+  margin-bottom: 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+
+  .ticket-header {
+    text-align: center;
+    margin-bottom: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-direction: row;
+
+    .service-hotline-container{
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+    }
+    .company-logo {
+      width: 180px;
+      height: 80px;
+      margin-bottom: 10px;
+    }
+
+    .service-hotline {
+      display: block;
+      font-size: 23px;
+      color: #666;
+    }
+
+    .service-hotline-title {
+      display: block;
+      font-size: 23px;
+      color: #666;
+    }
+  }
+
+  .ticket-cost {
+    font-size: 32px;
+    font-weight: bold;
+    margin: 15px 0;
+  }
+
+  .run-time{
+    font-size: 32px;
+    color: #333;
+    padding-bottom: 20px;
+    font-weight: bold;
+  }
+
+  .ticket-route {
+    margin: 15px 0;
+    display: flex;
+    justify-content: space-between;
+    flex-direction: column;
+    
+    .route-text {
+      font-size: min(40px, 5vw);
+      font-weight: bold;
+      padding-bottom: 30px;
+      width: 100%;
+      text-align: center;
+      line-height: 1.2;
+    }
+
+    .on-board-text {
+      font-size: 22px;
+      color: #333;
+      padding-bottom: 20px;
+    }
+
+    .off-board-text {
+      font-size: 22px;
+      color: #333;
+      padding-bottom: 20px;
+    }
+  }
+
+  .ticket-info {
+    margin: 15px 0;
+    width: 100%;
+
+    Text {
+      display: block;
+      margin: 5px 0;
+      font-size: 25px;
+      color: #333;
+    }
+  }
+
+  .qr-section {
+    margin: 20px 0;
+    
+    .qr-code {
+      width: 300px;
+      height: 300px;
+    }
+  }
+  
+  .qr-code-text{
+    font-size: 20px;
+    color: black;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-top: 10px;
+  }
+
+  .ticket-footer {
+    text-align: center;
+    margin-top: 20px;
+    padding-top: 15px;
+    border-top: 1px solid #eee;
+
+    .notice-text {
+      display: block;
+      font-size: 20px;
+      color: #666;
+      margin-bottom: 5px;
+    }
+
+    .notice-text-en {
+      display: block;
+      font-size: 20px;
+      color: #999;
+    }
+  }
+}
+
+.accordion {
+  background-color: rgb(242, 241, 241);
+}

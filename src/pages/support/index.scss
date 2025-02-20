@@ -1,0 +1,136 @@
+@import "~taro-ui/dist/style/components";
+@import "~taro-ui/dist/style/components/card.scss";
+@import "~taro-ui/dist/style/components/input-number.scss";
+@import "~taro-ui/dist/style/components/icon.scss";
+.container {
+    min-height: 100vh;
+    background-color: #f5f5f5;
+    display: flex;
+    flex-direction: column;
+}
+
+.page-body {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 24px;
+}
+
+.page-section {
+    width: 100%;
+    max-width: 600px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-top: 40px;
+}
+
+.section-title {
+    font-size: 40px;
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 32px;
+    text-align: center;
+}
+
+.at-card {
+    margin-bottom: 20px;
+    border-radius: 12px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.at-card .at-card__header {
+    font-size: 18px;
+    color: #007aff;
+}
+
+.at-card .at-card__note {
+    color: #888;
+}
+
+.at-list {
+    background-color: #fff;
+    border-radius: 12px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.at-list-item {
+    padding: 12px 20px;
+    border-bottom: 1px solid #e6e6e6;
+    color: #333;
+    font-size: 16px;
+}
+
+.at-list-item:last-child {
+    border-bottom: none;
+}
+
+.at-divider {
+    margin: 20px 0;
+    color: #999;
+    text-align: center;
+}
+
+.at-button {
+    margin-top: 30px;
+    width: 100%;
+    padding: 15px;
+    background-color: #007aff;
+    border-radius: 8px;
+    font-size: 18px;
+    font-weight: bold;
+    color: #fff;
+    transition: background-color 0.3s ease;
+
+    &:hover {
+        background-color: #005bb5;
+    }
+}
+
+.selected-card {
+    border: 5px solid blue;
+    border-radius: 10px;
+    /* Optional: to match the card's border radius */
+}
+
+.card-container {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr); // Creates a grid with 6 equal columns
+}
+
+
+.customer-service-btn {
+    width: 90%;
+    margin: 20px auto;
+    height: 88px;
+    line-height: 88px;
+    font-size: 32px;
+    border-radius: 44px;
+    background: linear-gradient(135deg, #007aff, #0056b3);
+    color: #ffffff;
+    box-shadow: 0 4px 12px rgba(0, 122, 255, 0.3);
+    border: none;
+    transition: all 0.3s ease;
+
+    &:active {
+        transform: scale(0.98);
+        box-shadow: 0 2px 6px rgba(0, 122, 255, 0.2);
+    }
+}
+
+.service-tips {
+    margin-top: 24px;
+    color: #666;
+    font-size: 26px;
+    text-align: center;
+}
+
+.support-image {
+    width: 420px;
+    height: 420px;
+    display: block;
+    margin: 20px auto;
+    border-radius: 8px;
+    object-fit: contain;
+}

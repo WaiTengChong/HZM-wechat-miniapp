@@ -1,0 +1,197 @@
+@import "~taro-ui/dist/style/components/grid.scss";
+@import "~taro-ui/dist/style/components/tab-bar.scss";
+@import "~taro-ui/dist/style/components/badge.scss";
+@import "~taro-ui/dist/style/components/icon.scss";
+
+
+.body {
+  position: relative;
+  &::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 80%;
+    background: linear-gradient(180deg, #ffffff 0%, #e6f3ff 50%, #f0f8ff 100%);
+    z-index: -1;
+  }
+}
+
+.index {
+  display: flex;
+  flex-direction: column;
+  height: 100vh; // Ensure the container takes the full height of the viewport
+  overflow: auto; // Ensure the container can scroll
+  padding-bottom: 300px;
+  position: relative; // Added for absolute positioning of logo
+  margin: 5%;
+
+  .logo-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    height: 15%;
+  }
+
+  .logo {
+    width: 40%;
+    height: 90%;
+    padding-top: 5%;
+    padding-bottom: 8%;
+  }
+
+  .swiper-container {
+    height: 25vh; // Set Swiper height to 30% of the viewport height
+    border-radius: 15px;
+    overflow: hidden;
+    padding-top: 5%;
+    .demo-text-1,
+    .demo-text-2,
+    .demo-text-3 {
+      border-radius: 15px;
+      overflow: hidden;
+    }
+  }
+
+  .grid-container {
+    padding: 20px;
+    margin-top: 20px;
+    margin-bottom: 20px;
+    background: white;
+    border-radius: 15px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  }
+
+  .content {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end; // Align content to the bottom
+    flex-grow: 1;
+    padding: 10px; // Add some padding if needed
+  }
+
+  .demo-text-1,
+  .demo-text-2,
+  .demo-text-3 {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100%;
+    width: 100%;
+  }
+
+  .demo-text-1 Image,
+  .demo-text-2 Image,
+  .demo-text-3 Image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover; // Adjust the images to cover the entire area
+  }
+}
+
+.login-button-container {
+  margin: 20px 0;
+
+  
+  .login-button {
+    background: linear-gradient(135deg, #6190E8, #6190E8);
+    color: white;
+    font-size: 25px;
+    font-weight: bold;
+    padding: 12px 0;
+    border-radius: 25px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    border: none;
+    width: 100%;
+    transition: transform 0.2s ease;
+    
+    &:active {
+      transform: scale(0.98);
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+  }
+}
+
+.login-card {
+  background: white;
+  border-radius: 15px;
+  margin-top: 5%;
+  padding: 20px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+
+  .login-card-content {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    
+
+    .login-icon {
+      background: rgba(97, 144, 232, 0.1);
+      padding: 15px;
+      border-radius: 50%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .login-status {
+      flex: 1;
+      display: flex;
+      flex-direction: row;
+      justify-content: space-between;
+      align-items: center;
+
+      .logged-in {
+        display: block;
+        color: #6190E8;
+        font-size: 30px;
+        font-weight: bold;
+        margin-bottom: 5px;
+      }
+      .login-status-icon-check{
+        margin-bottom:10px;
+      }
+      .login-status-icon{
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .not-logged-in {
+        color: #999;
+        font-size: 30px;
+        font-weight: bold;
+      }
+
+      .user-info {
+        display: block;
+        color: #666;
+        font-size: 30px;
+        font-weight: bold;
+      }
+      .user-info-not-logged-in{
+        display: block;
+        color: #999;
+        font-size: 30px;
+        font-weight: bold;
+      }
+    }
+  }
+}
+
+.logout-container{
+  display: flex;
+  padding-top: 50px;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+}
+
+.logout-text{
+  color: rgb(238, 105, 105);
+  font-size: 30px;
+}
+
