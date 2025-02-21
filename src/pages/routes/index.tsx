@@ -5,6 +5,7 @@ import { Component } from 'react';
 import { AtActivityIndicator, AtButton, AtCalendar, AtDivider, AtGrid, AtList, AtListItem, AtSteps } from 'taro-ui';
 import "taro-ui/dist/style/components/button.scss"; // 按需引入
 import { fetchRoutesAPILocal, getDeparturesZL, getLocationByRoute } from "../../api/api";
+import { RemoteSettingsService } from '../../services/remoteSettings';
 import './index.scss';
 
 export default class Routes extends Component<{}, State> {
@@ -38,30 +39,41 @@ export default class Routes extends Component<{}, State> {
   };
 
   // Fetch data from the API when the component mounts
-  componentDidMount() {
-    //fetchRoutesAPI()
-    fetchRoutesAPILocal()
-      .then(response => {
-        if (response.route && Array.isArray(response.route)) {
+  async componentDidMount() {
+    try {
+      // Initialize RemoteSettings if not already initialized
+      await RemoteSettingsService.getInstance().initialize();
+      
+      const response = await fetchRoutesAPILocal();
+      if (response.route && Array.isArray(response.route)) {
+        const filteredRoute = RemoteSettingsService.getInstance().getList('routeId_allowed', []);
+        console.log(filteredRoute);
 
-          this.setState({
-            // route: response.route.filter(i => i.routeId === '342' || i.routeId === '341'), //remove it when go live
-            route: response.route,
-            startAreaList: [...new Set(response.route.map(route => route.fromCityCName))].filter(Boolean) as string[],
-            endAreaList: [...new Set(response.route.map(route => route.toCityCName))].filter(Boolean) as string[],
-            loading: false,
-          });
-        } else {
-          console.error('Invalid response:', response.message);
-          this.setState({ loading: false });
-          Taro.navigateBack();
-        }
-      })
-      .catch(error => {
-        console.error(error);
+        // Simplified route filtering logic
+        const filteredRoutes = filteredRoute.length > 0 
+          ? response.route.filter(route => filteredRoute.includes(route.routeId))
+          : response.route;
+
+        this.setState({
+          route: filteredRoutes,
+          startAreaList: [...new Set(filteredRoutes.map(route => route.fromCityCName))].filter(Boolean) as string[],
+          endAreaList: [...new Set(filteredRoutes.map(route => route.toCityCName))].filter(Boolean) as string[],
+          loading: false,
+        });
+      } else {
+        console.error('Invalid response:', response.message);
         this.setState({ loading: false });
-
+        Taro.navigateBack();
+      }
+    } catch (error) {
+      console.error('Error in componentDidMount:', error);
+      this.setState({ loading: false });
+      Taro.showToast({
+        title: '加載設置失敗',
+        icon: 'none',
+        duration: 2000
       });
+    }
   }
 
   setLoading(loading: boolean) {

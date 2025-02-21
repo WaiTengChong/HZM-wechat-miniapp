@@ -1,9 +1,16 @@
 import { Component, PropsWithChildren } from 'react';
 import './app.scss';
+import { RemoteSettingsService } from './services/remoteSettings';
 
 class App extends Component<PropsWithChildren>  {
 
-  componentDidMount () {}
+  async componentDidMount () {
+    try {
+      await RemoteSettingsService.getInstance().initialize();
+    } catch (error) {
+      console.error('Failed to initialize remote settings:', error);
+    }
+  }
 
   componentDidShow () {}
 

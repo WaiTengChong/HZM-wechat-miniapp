@@ -9,14 +9,16 @@ import { GetTicketInfoResponse } from "src/components/getTicketInfoAPI";
 import { TicketResponse } from "src/components/getTicketsAPI";
 import { GetOrderInfoResponse } from "src/components/OrderInfoAPI";
 import { ReservationResponse } from "src/components/reservationsAPI";
+import { RemoteSetting } from "../types/remoteSettings";
 
 const baseUrl = "http://113.98.201.46:8050/cnhkbusapi2.2/rest/cl_basic_info";
- const localhosturl = "http://39.108.61.92:8081/";
+const localhosturl = "http://39.108.61.92:8081/";
 //const localhosturl = "http://localhost:8081/";
 const userName = "HK059api"; // Replace with your actual username
 const apiPassword = "1S3E8E49-D31C-0519B-3A16-7D4A04C623B5A"; // Replace with your actual password
 
 // Define local variables for each API endpoint
+const GET_REMOTE_SETTINGS = "web/getRemoteSettings";
 const ROUTES = "web/routes";
 const LOCATIONS = "web/locations";
 const DEPARTURES_ZL = "web/departuresZL";
@@ -57,7 +59,6 @@ const makeAPICall = async (
       },
       timeout: 10000000,
     });
-    console.log(response)
     if (response.data.messageCode != 0) {
       Taro.showToast({
         title: response.data.message,
@@ -82,6 +83,26 @@ const makeAPICall = async (
   }
 };
 
+const getRemoteSettings = async (): Promise<RemoteSetting[]> => {
+  try {
+    const response = await makeAPICall(
+      GET_REMOTE_SETTINGS,
+      "POST",
+      {},
+      {
+        Accept: "*/*",
+        "Accept-Language": "en,zh;q=0.9,zh-CN;q=0.8,zh-TW;q=0.7",
+        "Cache-Control": "no-cache",
+        "Content-Type": "application/x-www-form-urlencoded",
+        DNT: "1",
+        web: "1",
+      }
+    );
+    return response;
+  } catch (error) {
+    throw new Error(`Failed to fetch remote settings: ${error.message}`);
+  }
+};
 
 const createOrder = async (
   orderNo: string,
@@ -468,7 +489,21 @@ const wxLogin = () => {
 export {
   apiPassword,
   baseUrl,
-  cancelOrder, createOrder, createReservation,
-  fetchRoutesAPILocal, generateSignature, getBusLine, getDeparturesZL, getLocationByRoute, getOrderInfo, getTicketInfo, getTickets, localhosturl, userName, wxLogin, wxMakePay
+  cancelOrder,
+  createOrder,
+  createReservation,
+  fetchRoutesAPILocal,
+  generateSignature,
+  getBusLine,
+  getDeparturesZL,
+  getLocationByRoute,
+  getOrderInfo,
+  getRemoteSettings,
+  getTicketInfo,
+  getTickets,
+  localhosturl,
+  userName,
+  wxLogin,
+  wxMakePay
 };
 

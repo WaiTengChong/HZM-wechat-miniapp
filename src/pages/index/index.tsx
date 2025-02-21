@@ -107,7 +107,6 @@ export default class Index extends Component<PropsWithChildren, State> {
         Taro.getUserProfile({
           desc: '获取用户信息',
           success: (res) => {
-            console.log(res, "getUserProfile success");
             this.setState({
               nickName: res.userInfo.nickName
             })
@@ -119,7 +118,6 @@ export default class Index extends Component<PropsWithChildren, State> {
 
         Taro.getUserInfo({
           success: (res) => {
-            console.log(res, "getUserInfo success");
             this.setState({
               nickName: res.userInfo.nickName
             })

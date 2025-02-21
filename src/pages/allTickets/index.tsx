@@ -176,7 +176,7 @@ export default class TicketListPage extends Component<{}, State> {
                                     </AtList>
                                 </AtCard>
                             }
-                        </AtList
+                        </AtList>
                     </AtAccordion>
                 ))}
             </View>
