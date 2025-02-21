@@ -24,6 +24,12 @@ interface OrderDetailState {
 }
 
 export default class OrderDetail extends React.Component<{}, OrderDetailState> {
+  // Add page configuration
+  config = {
+    navigationBarBackButton: false,
+    navigationStyle: 'custom'
+  }
+
   state: OrderDetailState = {
     tickets: []
   };

@@ -74,8 +74,8 @@ interface State {
   selectedEndLocationAddress: string;
   selectedStartLocationIndex: number;
   selectedEndLocationIndex: number;
-  startLocations: Location[],
-  endLocations: Location[],
+  startLocations: Location[];
+  endLocations: Location[];
   selectedStartArea: string;
   selectedEndArea: string;
   startAreaList: string[];
@@ -83,4 +83,5 @@ interface State {
   ticketData: Ticket[];
   selectedTicketIndex: number;
   selectedTicket: Ticket | null;
+  routeTimeLoading: boolean;
 }

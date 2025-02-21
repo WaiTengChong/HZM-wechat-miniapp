@@ -6,6 +6,11 @@
   min-height: 100vh;
 }
 
+.at-list__item-extra {
+  max-width: 400px;
+}
+
+
 .page-body {
   background-color: #ffffff;
   border-radius: 8px;
@@ -71,6 +76,25 @@
     width: 40px;
   }
 }
+.ticketTime {
+  .item-extra__info {
+    color: #1677ff;
+    font-weight: bold;
+  }
+
+  &.error {
+    .item-extra__info {
+      color: red;
+      font-weight: bold;
+    }
+  }
+
+  .item-extra__icon-arrow {
+    color: black;
+    width: 40px;
+  }
+}
+
 .picker:hover {
   border-color: #ccc;
   background-color: #f0f0f0;
@@ -122,3 +146,4 @@
     word-wrap: break-word;
   }
 }
+

@@ -36,6 +36,7 @@ export default class Routes extends Component<{}, State> {
     ticketData: [],
     selectedTicketIndex: 0,
     selectedTicket: null,
+    routeTimeLoading: false,
   };
 
   // Fetch data from the API when the component mounts
@@ -43,14 +44,14 @@ export default class Routes extends Component<{}, State> {
     try {
       // Initialize RemoteSettings if not already initialized
       await RemoteSettingsService.getInstance().initialize();
-      
+
       const response = await fetchRoutesAPILocal();
       if (response.route && Array.isArray(response.route)) {
         const filteredRoute = RemoteSettingsService.getInstance().getList('routeId_allowed', []);
         console.log(filteredRoute);
 
         // Simplified route filtering logic
-        const filteredRoutes = filteredRoute.length > 0 
+        const filteredRoutes = filteredRoute.length > 0
           ? response.route.filter(route => filteredRoute.includes(route.routeId))
           : response.route;
 
@@ -78,6 +79,33 @@ export default class Routes extends Component<{}, State> {
 
   setLoading(loading: boolean) {
     this.setState({ loading });
+  }
+
+  loadRouteTime = async (date: string) => {
+    this.setState({ routeTimeLoading: true });
+    try {
+      const response: DepartureZL = await getDeparturesZL(
+        this.state.selectedRouteId,
+        this.state.location.find(lc => lc.cname === this.state.selectedStartLocation)?.id!,
+        this.state.location.find(lc => lc.cname === this.state.selectedEndLocation)?.id!,
+        0,
+        "",
+        date
+      );
+      if (response.run != undefined && response.run.length > 0) {
+        this.setState({
+          ticketData: response.run,
+        });
+        Taro.setStorageSync("ticket_date", this.state.dateSel);
+      } else {
+        this.setState({ ticketData: [] });
+        Taro.showToast({ title: '没有可用的车票', icon: 'none' })
+      }
+    } catch (error) {
+      console.error('Error fetching route time:', error);
+    } finally {
+      this.setState({ routeTimeLoading: false });
+    }
   }
 
   // Handle changes in the selector dropdown
@@ -112,6 +140,16 @@ export default class Routes extends Component<{}, State> {
         selectedStartLocationAddress: response.locations.filter(lc => lc.on === "true")[0].address,
         selectedEndLocationAddress: response.locations.filter(lc => lc.on === "false")[0].address,
       });
+      try {
+        await this.loadRouteTime(this.state.dateSel);
+      } catch (error) {
+        console.error('Error loading route time:', error);
+        Taro.showToast({
+          title: '加載班次失敗',
+          icon: 'none',
+          duration: 2000
+        });
+      }
       this.setLoading(false);
     } catch (error) {
       this.setLoading(false);
@@ -147,7 +185,7 @@ export default class Routes extends Component<{}, State> {
     })
   }
 
-  onStepChange(stepCurrent: number) {
+  onStepChange = async (stepCurrent: number) => {
     // If at step 0, prevent moving forward
     if (this.state.stepCurrent === 0) {
       return; // Do nothing when trying to move forward from step 0
@@ -174,7 +212,9 @@ export default class Routes extends Component<{}, State> {
       selectedStartLocationIndex: e.detail.value,
       selectedStartLocation: this.state.startLocations[e.detail.value].cname,
       selectedStartLocationAddress: this.state.startLocations[e.detail.value].address
-    })
+    }, async () => {
+      await this.loadRouteTime(this.state.dateSel);
+    });
   }
 
   onEndLoaciontChange = (e: any) => {
@@ -182,20 +222,26 @@ export default class Routes extends Component<{}, State> {
       selectedEndLocationIndex: e.detail.value,
       selectedEndLocation: this.state.endLocations[e.detail.value].cname,
       selectedEndLocationAddress: this.state.endLocations[e.detail.value].address
+    }, async () => {
+      await this.loadRouteTime(this.state.dateSel);
     })
   }
 
   // Handle date changes
-  onDateChange = (e: any) => {
-    this.setState({
-      dateSel: e.value // Use e.date for date input
+  onDateChange = async (e: any) => {
+    console.log(e);
+    await this.setState({
+      dateSel: e.value, // Use e.date for date input
+      selectedTicketIndex: 0,
+      selectedTicket: null
     });
+    await this.loadRouteTime(e.value);
   };
 
   onTicketChange = (e: any) => {
     const index = parseInt(e.detail.value);
     const selectedTicket = this.state.ticketData![index];
-    this.setState({ 
+    this.setState({
       selectedTicket,
       selectedTicketIndex: index
     });
@@ -243,14 +289,14 @@ export default class Routes extends Component<{}, State> {
           )}
 
           {/* Route Selector */}
-          {this.state.stepCurrent === 0 && !this.state.loading  && (
+          {this.state.stepCurrent === 0 && !this.state.loading && (
             <View className='page-section'>
               <View>
                 <View className='step-one-container'>
                   <Text className='sub-title'>出發地</Text>
                   <Text className='sub-title-area'>{this.state.selectedStartArea}</Text>
                   {(this.state.selectedStartArea !== '' || this.state.selectedEndArea !== '') && (
-                    <AtButton className='reset-button' type='primary' 
+                    <AtButton className='reset-button' type='primary'
                       onClick={() => !this.state.loading && this.handleReset()}
                       disabled={this.state.loading}
                       loading={this.state.loading}
@@ -260,13 +306,13 @@ export default class Routes extends Component<{}, State> {
                 {this.state.selectedStartArea === "" && (
                   <AtGrid
                     columnNum={4}
-                  data={this.state.startAreaList.map(area => ({
-                    value: area,
-                  }))}
+                    data={this.state.startAreaList.map(area => ({
+                      value: area,
+                    }))}
                     onClick={(item, index) => this.handleStartAreaClick(index)}
                   />
                 )}
-                
+
                 <View style={{ height: '20px' }}></View>
 
                 <View className='step-one-container'>
@@ -275,13 +321,13 @@ export default class Routes extends Component<{}, State> {
                   <View style={{ width: '55px' }}></View>
                 </View>
                 {this.state.selectedEndArea === "" && (
-                <AtGrid
-                  columnNum={4}
-                  data={this.state.endAreaList.map(area => ({
-                    value: area,
-                  }))}
-                  onClick={(item, index) => this.handleEndAreaClick(index)}
-                />
+                  <AtGrid
+                    columnNum={4}
+                    data={this.state.endAreaList.map(area => ({
+                      value: area,
+                    }))}
+                    onClick={(item, index) => this.handleEndAreaClick(index)}
+                  />
                 )}
               </View>
             </View>
@@ -292,8 +338,8 @@ export default class Routes extends Component<{}, State> {
               <View className='page-section' >
                 <View className='step-one-container'>
                   <Text className='section-title'>出發</Text>
-                  <AtButton className='reset-button' type='primary' 
-                    onClick={() => !this.state.loading && this.setState({stepCurrent: 0})}
+                  <AtButton className='reset-button' type='primary'
+                    onClick={() => !this.state.loading && this.setState({ stepCurrent: 0 })}
                   > 返回</AtButton>
                 </View>
                 <Picker
@@ -307,7 +353,7 @@ export default class Routes extends Component<{}, State> {
                     <AtListItem
                       className='location-item'
                       title='地點'
-                      extraText={this.state.selectedStartLocation+" "}
+                      extraText={this.state.selectedStartLocation + " "}
                       arrow='down'
                       extraThumb={this.state.selectedStartLocationAddress}
                     />
@@ -350,23 +396,38 @@ export default class Routes extends Component<{}, State> {
                 <Text className='section-title'>日期</Text>
                 <AtCalendar minDate={dayjs().format('YYYY-MM-DD')} maxDate={dayjs().add(1, 'month').format('YYYY-MM-DD')} onDayClick={this.onDateChange} />
               </View>
-{/* 
-              <View className='page-section'>
-                <Text className='section-title'>上車時間</Text>
+
+              <Text className='section-title'>選擇班次</Text>
+              {this.state.routeTimeLoading ? (
+                <AtList>
+                  <AtListItem
+                    title='班次時間'
+                    extraText='加載中...'
+                  />
+                </AtList>
+              ) : (
                 <Picker
-                  mode='time'
-                  onChange={this.onTimeChange}
-                  defaultValue='15:00'
-                  value={timeSel}
+                  mode='selector'
+                  range={ticketData?.filter(ticket => {
+                    const isToday = dayjs(dateSel).isSame(dayjs(), "day");
+                    return isToday ? 
+                      dayjs(`${dateSel} ${ticket.runStartTime}`).isAfter(dayjs().add(1, 'hour')) :
+                      true;
+                  }).map(ticket => ticket.runStartTime)}
+                  onChange={this.onTicketChange}
+                  value={selectedTicketIndex}
+                    disabled={this.state.routeTimeLoading || ticketData.length === 0}
                 >
                   <AtList>
                     <AtListItem
-                      title='站點開車時間'
-                      extraText={this.state.timeSel}
+                      className={`ticketTime ${ticketData.length === 0 ? 'error' : ''}`}
+                      title='班次時間'
+                      extraText={ticketData.length === 0 ? '請重新選擇日期' : selectedTicket?.runStartTime || '請選擇'}
+                        arrow={ticketData.length === 0 ? undefined : 'down'}
                     />
                   </AtList>
                 </Picker>
-              </View> */}
+              )}
 
               <AtDivider content='訂票需知 ' />
 
@@ -383,81 +444,13 @@ export default class Routes extends Component<{}, State> {
               </View>
 
               <View className='confirm-button'>
-                <AtButton type='primary' 
+                <AtButton type='primary'
                   disabled={this.state.loading}
                   loading={this.state.loading}
-                  onClick={async () => {
-                    if (this.state.loading) return;
-                    this.setLoading(true);
-                    try {
-                      const response: DepartureZL = await getDeparturesZL(
-                        selectedRouteId,
-                        location.find(lc => lc.cname === selectedStartLocation)?.id!,
-                        location.find(lc => lc.cname === selectedEndLocation)?.id!,
-                        0,
-                        "",
-                        dateSel
-                      );
-                      if (response.run != undefined && response.run.length > 0) {
-                        this.setState({
-                          ticketData: response.run,
-                          stepCurrent: 2  // Automatically move to step 2
-                        });
-                        Taro.setStorageSync("ticket_date", dateSel);
-                      } else {
-                        Taro.showToast({ title: '没有可用的车票', icon: 'none' })
-                      }
-                    } finally {
-                      this.setLoading(false);
-                    }
-                  }}
+                  onClick={() => !this.state.loading && this.handleConfirmSelection()}
                 >提交</AtButton>
               </View>
             </>
-          )}
-
-          {this.state.stepCurrent === 2 && !this.state.loading && (
-            <View className='page-section'>
-              <View className='step-two-container'>
-                <Text className='section-title'>選擇班次</Text>
-                <AtButton className='reset-button' type='primary' 
-                  onClick={() => !this.state.loading && this.setState({stepCurrent: 1})}
-                > 返回</AtButton>
-              </View>
-              {loading ? (
-                <AtActivityIndicator mode='center' />
-              ) : (
-                <>
-                  <Picker
-                    mode='selector'
-                    range={ticketData?.filter(ticket => {
-                      if (dayjs(dateSel).isSame(dayjs(), "day")) {
-                        // If today, filter times less than 1 hour from now
-                        return dayjs(`${dateSel} ${ticket.runStartTime}`).isAfter(dayjs().add(1, 'hour'));
-                      }
-                      return true; // Show all times for future dates
-                    }).map(ticket => 
-                      `${ticket.runStartTime}`
-                    )}
-                    onChange={this.onTicketChange}
-                    value={selectedTicketIndex}
-                  >
-                    <AtList>
-                      <AtListItem
-                        title='班次時間'
-                        extraText={selectedTicket ? `${selectedTicket.runStartTime}` : '請選擇'}
-                      />
-                    </AtList>
-                  </Picker>
-                  <AtButton type='primary' 
-                    className='confirm-button'
-                    onClick={() => !this.state.loading && this.handleConfirmSelection()}
-                    disabled={this.state.loading}
-                    loading={this.state.loading}
-                  >確認選擇</AtButton>
-                </>
-              )}
-            </View>
           )}
         </View>
       </View >

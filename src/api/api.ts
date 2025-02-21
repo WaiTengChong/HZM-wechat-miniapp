@@ -40,7 +40,6 @@ const makeAPICall = async (
 ) => {
   const AUTH_TICKET = Taro.getStorageSync("AUTH_TICKET");
   const OPEN_ID = Taro.getStorageSync("OPEN_ID");
-  console.log(AUTH_TICKET, OPEN_ID);
   try {
     const response = await axios({
       baseURL: localhosturl,
