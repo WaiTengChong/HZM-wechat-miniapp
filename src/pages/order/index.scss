@@ -4,6 +4,10 @@
 @import "~taro-ui/dist/style/components/icon.scss";
 .order-detail-container {
   padding: 20px;
+
+  .at-card__header-extra{
+    max-width: 400px;
+  }
 }
 
 .order-card {

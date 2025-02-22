@@ -1,6 +1,7 @@
 import { Button, Image, View } from '@tarojs/components';
 import Taro from '@tarojs/taro';
 import { Component } from 'react';
+import { I18n } from '../../I18n';
 import support from '../../image/support.png';
 import './index.scss';
 
@@ -29,10 +30,10 @@ export default class Support extends Component<{}, State> {
             extInfo: { url: '' }, // 客服会话页面的路径
             corpId: '', // 企业ID，需要替换为实际的企业ID
             success: () => {
-                console.log('成功開啟客服會話');
+                console.log(I18n.customerServiceConnectSuccess);
             },
             fail: (err) => {
-                console.error('開啟客服會話失敗:', err);
+                console.error(I18n.customerServiceConnectFail, err);
                 this.setState({ isConnecting: false });
             }
         });
@@ -46,7 +47,7 @@ export default class Support extends Component<{}, State> {
                 <View className='page-body'>
                     <View className='page-section'>
                         <View className='section-title'>
-                            線上客服支援
+                            {I18n.onlineCustomerSupport}
                         </View>
                         <Image src={support} className='support-image' />
                         <Button 
@@ -56,11 +57,11 @@ export default class Support extends Component<{}, State> {
                                 console.log('客服會話事件:', e);
                             }}
                         >
-                            {isConnecting ? '正在連接客服...' : '聯繫客服'}
+                            {isConnecting ? I18n.connectingCustomerService : I18n.contactCustomerService}
                         </Button>
                         
                         <View className='service-tips'>
-                            工作時間：週一至週五 9:00-18:00
+                            {I18n.serviceHours}
                         </View>
                     </View>
                 </View>

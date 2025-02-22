@@ -7,6 +7,7 @@ import { TicketResponse } from 'src/components/getTicketsAPI';
 import { GetOrderInfoResponse } from 'src/components/OrderInfoAPI';
 import { AtButton, AtCard, AtDivider, AtListItem } from "taro-ui";
 import { cancelOrder, getOrderInfo, getTicketInfo } from '../../api/api'; // Import the API method
+import { I18n } from '../../I18n';
 import "./index.scss";
 
 
@@ -41,7 +42,7 @@ export default class OrderDetail extends React.Component<{}, OrderDetailState> {
     console.log("apiResponses", apiResponses);
 
     if (!apiResponses?.length) {
-      Taro.showToast({ title: "未找到票務信息", icon: 'none', duration: 2000 });
+      Taro.showToast({ title: I18n.noTicketInfo, icon: 'none', duration: 2000 });
       return;
     }
 
@@ -68,31 +69,31 @@ export default class OrderDetail extends React.Component<{}, OrderDetailState> {
   handleCancelOrder = async (orderNo: string) => {
     const response: CancelOrderResponse = await cancelOrder(orderNo);
     if (response.errorCode === "SUCCESS") {
-      Taro.showToast({ title: "訂單已取消", icon: "success", duration: 2000 });
+      Taro.showToast({ title: I18n.orderCancelled, icon: "success", duration: 2000 });
       // Remove the cancelled ticket from state
       this.setState(prevState => ({
         tickets: prevState.tickets.filter(ticket => ticket.orderNo !== orderNo)
       }));
     } else {
-      Taro.showToast({ title: response.errorMsg || "取消訂單失敗", icon: 'none', duration: 2000 });
+      Taro.showToast({ title: response.errorMsg || I18n.cancelOrderFailed, icon: 'none', duration: 2000 });
     }
   };
 
   handleOrderInfo = async (orderNo: string) => {
     const response: GetOrderInfoResponse = await getOrderInfo(orderNo);
     if (response.errorCode === "SUCCESS") {
-      Taro.showToast({ title: "獲取訂單信息成功", icon: "success", duration: 2000 });
+      Taro.showToast({ title: I18n.getOrderInfoSuccess, icon: "success", duration: 2000 });
     } else {
-      Taro.showToast({ title: response.errorMsg || "獲取訂單信息失敗", icon: 'none', duration: 2000 });
+      Taro.showToast({ title: response.errorMsg || I18n.getOrderInfoFailed, icon: 'none', duration: 2000 });
     }
   };
 
   handleGetTicketInfo = async (ticketNo: string) => {
     const response: GetTicketInfoResponse = await getTicketInfo(ticketNo);
     if (response.ticketApplayStock.ETicketNO !== null || response.ticketApplayStock.ETicketNO !== undefined) {
-      Taro.showToast({ title: "獲取票號信息成功", icon: "success", duration: 2000 });
+      Taro.showToast({ title: I18n.getTicketInfoSuccess, icon: "success", duration: 2000 });
     } else {
-      Taro.showToast({ title: "獲取票號信息失敗", icon: 'none', duration: 2000 });
+      Taro.showToast({ title: I18n.getTicketInfoFailed, icon: 'none', duration: 2000 });
     }
   };
 
@@ -103,7 +104,7 @@ export default class OrderDetail extends React.Component<{}, OrderDetailState> {
         {tickets.map((ticket, index) => (
           <AtCard 
             key={ticket.orderNo + index}
-            title="訂單詳情" 
+            title={I18n.orderDetail}
             extra={ticket.orderNo} 
             className="order-card"
           >
@@ -112,7 +113,7 @@ export default class OrderDetail extends React.Component<{}, OrderDetailState> {
                 {ticket.depatureDestinatName} → {ticket.depatureOriginName}
               </Text>
             </View>
-            <AtDivider content="二維碼" />
+            <AtDivider content={I18n.qrCode} />
             <View 
               className="qr-code-container" 
               onClick={() => Taro.previewImage({ 
@@ -124,26 +125,26 @@ export default class OrderDetail extends React.Component<{}, OrderDetailState> {
                 className="qr-code" 
               />
             </View>
-            <AtDivider content="車票信息" />
+            <AtDivider content={I18n.ticketInfo} />
             <View className="order-info">
-              <AtListItem title="票號" extraText={ticket.ticketNo} />
-              <AtListItem title="車票價格" hasBorder={false} extraText={`$${parseFloat(ticket.cost).toFixed(2).replace(/\.?0+$/, '')}`} />
-              <AtListItem title="出發日期" hasBorder={false} extraText={ticket.runDate} />
-              <AtListItem title="出發時間" hasBorder={false} extraText={ticket.runTime} />
+              <AtListItem title={I18n.ticketNumber} extraText={ticket.ticketNo} />
+              <AtListItem title={I18n.ticketPrice} hasBorder={false} extraText={`$${parseFloat(ticket.cost).toFixed(2).replace(/\.?0+$/, '')}`} />
+              <AtListItem title={I18n.departureDate} hasBorder={false} extraText={ticket.runDate} />
+              <AtListItem title={I18n.departureTime} hasBorder={false} extraText={ticket.runTime} />
             </View>
             <AtButton
               type="secondary"
               className="cancel-button"
               onClick={() => this.handleGetTicketInfo(ticket.ticketNo)}
             >
-              查看票號
+              {I18n.viewTicket}
             </AtButton>
             <AtButton
               type="secondary"
               className="cancel-button"
               onClick={() => this.handleOrderInfo(ticket.orderNo)}
             >
-              查看訂單
+              {I18n.viewOrder}
             </AtButton>
           </AtCard>
         ))}
@@ -152,7 +153,7 @@ export default class OrderDetail extends React.Component<{}, OrderDetailState> {
           className="back-button"
           onClick={() => Taro.navigateTo({ url: "/pages/index/index" })}
         >
-          返回
+          {I18n.back}
         </AtButton>
       </View>
     );

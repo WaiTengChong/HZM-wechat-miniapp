@@ -1,9 +1,10 @@
-import { Image, Swiper, SwiperItem, Text, View } from '@tarojs/components';
+import { Button, Image, Swiper, SwiperItem, Text, View } from '@tarojs/components';
 import Taro from "@tarojs/taro";
 import { Component, PropsWithChildren } from 'react';
 import { AtGrid, AtIcon } from 'taro-ui';
 import "taro-ui/dist/style/components/button.scss"; // 按需引入
 import { wxLogin } from '../../api/api';
+import { I18n } from '../../I18n';
 
 import logo from '../../../src/image/logo-no.png';
 import image1 from '../../../static/banner/carBanner1.png';
@@ -14,6 +15,7 @@ type State = {
   current: number;
   loginStatus: boolean;
   nickName: string;
+  language: string;
 };
 
 export default class Index extends Component<PropsWithChildren, State> {
@@ -21,7 +23,8 @@ export default class Index extends Component<PropsWithChildren, State> {
   state: State = {
     current: 0,
     loginStatus: false,
-    nickName: ''
+    nickName: '',
+    language: 'zh'
   }
 
   componentDidMount() {
@@ -84,36 +87,23 @@ export default class Index extends Component<PropsWithChildren, State> {
   }
 
   checkSession = () => {
-
     //check AuthToken
     const AUTH_TICKET = Taro.getStorageSync("AUTH_TICKET");
     const OPEN_ID = Taro.getStorageSync("OPEN_ID");
     if (!AUTH_TICKET || !OPEN_ID) {
       Taro.showToast({
-        title: '请先登录',
+        title: I18n.pleaseLoginFirst,
         icon: 'error',
         duration: 2000
       });
       return;
     }
 
-
     //检测sessionkey
     Taro.checkSession({
       success: () => {
         this.setState({
           loginStatus: true
-        })
-        Taro.getUserProfile({
-          desc: '获取用户信息',
-          success: (res) => {
-            this.setState({
-              nickName: res.userInfo.nickName
-            })
-          },
-          fail: (err) => {
-            console.log(err, "getUserProfile err");
-          }
         })
 
         Taro.getUserInfo({
@@ -125,7 +115,7 @@ export default class Index extends Component<PropsWithChildren, State> {
           fail: (err) => {
             console.log(err, "getUserInfo err");
             Taro.showToast({
-              title: '获取用户信息失败',
+              title: I18n.getUserInfoFailed,
               icon: 'error',
               duration: 2000
             })
@@ -137,7 +127,7 @@ export default class Index extends Component<PropsWithChildren, State> {
           loginStatus: false
         })
         Taro.showToast({
-          title: '已经失效',
+          title: I18n.sessionExpired,
           icon: 'error',
           duration: 2000
         })
@@ -146,6 +136,12 @@ export default class Index extends Component<PropsWithChildren, State> {
         wxLogin();
       }
     });
+  }
+
+  toggleLanguage = () => {
+    const newLang = this.state.language === 'zh' ? 'hk' : 'zh';
+    this.setState({ language: newLang });
+    I18n.setLanguage(newLang);
   }
 
   render() {
@@ -176,26 +172,30 @@ export default class Index extends Component<PropsWithChildren, State> {
               </SwiperItem>
             </Swiper>
 
-            <View className='login-card' onClick={!this.state.loginStatus ? this.getPhoneNumber : undefined}>
+            <View className='login-card'>
               <View className='login-card-content'>
-
                 <View className='login-status'>
                   <View className='login-icon'>
                     <AtIcon value='user' size='30' color={this.state.loginStatus ? '#6190E8' : '#999'} />
                   </View>
                   {this.state.loginStatus ? (
-                    <>
-                      <Text className='user-info'>{this.state.nickName}</Text>
-                      <View className='login-status-icon'>
-                        <Text className='logged-in'>已登入</Text>
-                        <AtIcon className='login-status-icon-check' value='check' size='20' color='#6190E8' />
-                      </View>
+                    <> <View className='login-status-icon'>
+                      <Text className='logged-in'>{I18n.loggedIn}</Text>
+                      <AtIcon className='login-status-icon-check' value='check' size='20' color='#6190E8' />
+                    </View>
+                      <Text className='user-info'>{}</Text>
+                     
                     </>
                   ) : (
-                    <>
-                      <Text className='user-info-not-logged-in'>請點擊登入</Text>
+                    <View className='login-wrapper'>
+                      <Button 
+                        className='invisible-button' 
+                        openType='getPhoneNumber' 
+                        onGetPhoneNumber={this.getPhoneNumber}
+                      />
+                      <Text className='user-info-not-logged-in'>{I18n.clickToLogin}</Text>
                       <Text className='logged-in'></Text>
-                    </>
+                    </View>
                   )}
                 </View>
               </View>
@@ -208,25 +208,34 @@ export default class Index extends Component<PropsWithChildren, State> {
               data={[
                 {
                   image: 'https://img.icons8.com/color/48/000000/train-ticket.png',
-                  value: '購買車票',
+                  value: I18n.buyTicket,
                 },
                 {
                   image: 'https://img.icons8.com/color/48/000000/ticket.png',
-                  value: '我的車票'
+                  value: I18n.myTickets
                 },
                 {
                   image: 'https://img.icons8.com/color/48/000000/info.png',
-                  value: '客服中心'
+                  value: I18n.customerService
                 }
               ]}
             />
+            <View className='language-switch'>
+              <Text
+                className='language-text'
+                onClick={this.toggleLanguage}
+              >
+                {this.state.language === 'zh' ? '切換至繁體' : '切换至简体'}
+              </Text>
+            </View>
+            
             {this.state.loginStatus && (
               <View className='logout-container'>
                 <Text
                   className='logout-text'
                   onClick={this.handleLogout}
                 >
-                  登出
+                  {I18n.logout}
                 </Text>
               </View>
             )}

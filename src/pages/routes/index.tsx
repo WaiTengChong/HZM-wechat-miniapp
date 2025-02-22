@@ -5,6 +5,7 @@ import { Component } from 'react';
 import { AtActivityIndicator, AtButton, AtCalendar, AtDivider, AtGrid, AtList, AtListItem, AtSteps } from 'taro-ui';
 import "taro-ui/dist/style/components/button.scss"; // 按需引入
 import { fetchRoutesAPILocal, getDeparturesZL, getLocationByRoute } from "../../api/api";
+import { I18n } from '../../I18n';
 import { RemoteSettingsService } from '../../services/remoteSettings';
 import './index.scss';
 
@@ -251,7 +252,7 @@ export default class Routes extends Component<{}, State> {
     const { selectedTicket } = this.state;
     if (!selectedTicket) {
       Taro.showToast({
-        title: '請選擇一張車票',
+        title: I18n.pleaseSelectTicket,
         icon: 'none',
         duration: 2000
       });
@@ -268,9 +269,9 @@ export default class Routes extends Component<{}, State> {
     const { route: routes, selectorChecked, selectedRouteId, selectorIndex, dateSel, loading, startLocation, endLocation,
       location, stepCurrent, selectedStartLocation, selectedStartLocationAddress, selectedEndLocation, selectedEndLocationAddress, selectedStartLocationIndex, selectedEndLocationIndex, startLocations, endLocations, ticketData, selectedTicketIndex, selectedTicket } = this.state;
     const items = [
-      { 'title': '路線', 'desc': '出發地和目的地' },
-      { 'title': '地點', 'desc': '具體上下車地點' },
-      { 'title': '班次', 'desc': '合適班次' }
+      { 'title': I18n.route, 'desc': I18n.routeDesc },
+      { 'title': I18n.location, 'desc': I18n.locationDesc },
+      { 'title': I18n.schedule, 'desc': I18n.scheduleDesc }
     ]
 
     return (
@@ -293,14 +294,14 @@ export default class Routes extends Component<{}, State> {
             <View className='page-section'>
               <View>
                 <View className='step-one-container'>
-                  <Text className='sub-title'>出發地</Text>
+                  <Text className='sub-title'>{I18n.departure}</Text>
                   <Text className='sub-title-area'>{this.state.selectedStartArea}</Text>
                   {(this.state.selectedStartArea !== '' || this.state.selectedEndArea !== '') && (
                     <AtButton className='reset-button' type='primary'
                       onClick={() => !this.state.loading && this.handleReset()}
                       disabled={this.state.loading}
                       loading={this.state.loading}
-                    > 重置</AtButton>
+                    >{I18n.reset}</AtButton>
                   )}
                 </View>
                 {this.state.selectedStartArea === "" && (
@@ -316,7 +317,7 @@ export default class Routes extends Component<{}, State> {
                 <View style={{ height: '20px' }}></View>
 
                 <View className='step-one-container'>
-                  <Text className='sub-title'>目的地</Text>
+                  <Text className='sub-title'>{I18n.destination}</Text>
                   <Text className='sub-title-area'>{this.state.selectedEndArea}</Text>
                   <View style={{ width: '55px' }}></View>
                 </View>
@@ -337,10 +338,10 @@ export default class Routes extends Component<{}, State> {
               {/* Start Location Picker */}
               <View className='page-section' >
                 <View className='step-one-container'>
-                  <Text className='section-title'>出發</Text>
+                  <Text className='section-title'>{I18n.departure}</Text>
                   <AtButton className='reset-button' type='primary'
                     onClick={() => !this.state.loading && this.setState({ stepCurrent: 0 })}
-                  > 返回</AtButton>
+                  >{I18n.back}</AtButton>
                 </View>
                 <Picker
                   mode='selector'
@@ -352,7 +353,7 @@ export default class Routes extends Component<{}, State> {
                   <AtList>
                     <AtListItem
                       className='location-item'
-                      title='地點'
+                      title={I18n.place}
                       extraText={this.state.selectedStartLocation + " "}
                       arrow='down'
                       extraThumb={this.state.selectedStartLocationAddress}
@@ -361,14 +362,14 @@ export default class Routes extends Component<{}, State> {
                 </Picker>
 
                 <AtListItem
-                  title='位置'
+                  title={I18n.address}
                   note={this.state.selectedStartLocationAddress}
                 />
               </View>
 
               {/* End Location Picker */}
               <View className='page-section'>
-                <Text className='section-title'>到達</Text>
+                <Text className='section-title'>{I18n.destination}</Text>
                 <Picker
                   mode='selector'
                   range={location.filter(lc => lc.on === "false").map(locations => `${locations.cname}`)}
@@ -379,7 +380,7 @@ export default class Routes extends Component<{}, State> {
                   <AtList>
                     <AtListItem
                       className='location-item'
-                      title='地點'
+                      title={I18n.place}
                       extraText={this.state.selectedEndLocation + " "}
                       arrow='down'
                     />
@@ -387,22 +388,22 @@ export default class Routes extends Component<{}, State> {
                 </Picker>
 
                 <AtListItem
-                  title='位置'
+                  title={I18n.address}
                   note={this.state.selectedEndLocationAddress}
                 />
               </View>
 
               <View className='page-section'>
-                <Text className='section-title'>日期</Text>
+                <Text className='section-title'>{I18n.date}</Text>
                 <AtCalendar minDate={dayjs().format('YYYY-MM-DD')} maxDate={dayjs().add(1, 'month').format('YYYY-MM-DD')} onDayClick={this.onDateChange} />
               </View>
 
-              <Text className='section-title'>選擇班次</Text>
+              <Text className='section-title'>{I18n.selectSchedule}</Text>
               {this.state.routeTimeLoading ? (
                 <AtList>
                   <AtListItem
-                    title='班次時間'
-                    extraText='加載中...'
+                    title={I18n.scheduleTime}
+                    extraText={I18n.loadingEllipsis}
                   />
                 </AtList>
               ) : (
@@ -416,31 +417,31 @@ export default class Routes extends Component<{}, State> {
                   }).map(ticket => ticket.runStartTime)}
                   onChange={this.onTicketChange}
                   value={selectedTicketIndex}
-                    disabled={this.state.routeTimeLoading || ticketData.length === 0}
+                  disabled={this.state.routeTimeLoading || ticketData.length === 0}
                 >
                   <AtList>
                     <AtListItem
                       className={`ticketTime ${ticketData.length === 0 ? 'error' : ''}`}
-                      title='班次時間'
-                      extraText={ticketData.length === 0 ? '請重新選擇日期' : selectedTicket?.runStartTime || '請選擇'}
-                        arrow={ticketData.length === 0 ? undefined : 'down'}
+                      title={I18n.scheduleTime}
+                      extraText={ticketData.length === 0 ? I18n.pleaseSelectNewDate : selectedTicket?.runStartTime || I18n.pleaseSelect}
+                      arrow={ticketData.length === 0 ? undefined : 'down'}
                     />
                   </AtList>
                 </Picker>
               )}
 
-              <AtDivider content='訂票需知 ' />
+              <AtDivider content={I18n.ticketNotice} />
 
               <View className='page-info'>
-                <AtList>1. 所有車票只限票面上註明之日期及班次有效，乘客必須依照選定的日期及上車地點登車，過期無效。</AtList>
-                <AtList>2. 乘客必須按車票上註明之班次於開車前15分鐘到達上車點候車，逾時不候，亦不獲退票。</AtList>
-                <AtList>3. 兒童車票只適合3-5歲小童使用。</AtList>
-                <AtList>4. 如需辦理預辦登機手續，平日請於航班起飛前3小時到達本公司票務中心辦理手續；而節日或週末前夕請於航班起飛前4小時到達本公司票務中心辦理手續。</AtList>
-                <AtList>5. 香港市區與深圳寶安機場間之車程約為2小時 「不包括特殊路面交通情況及過關等候時間」。</AtList>
-                <AtList>6. 乘客如因過關延誤，可轉乘本司下一班車前往目的地。</AtList>
-                <AtList>7. 付款方式: Wechat Pay。</AtList>
-                <AtList>8. 更改訂單: 所有訂單均不設任何取消及更改。</AtList>
-                <AtList>9. 退款及退貨: 所有訂單均不設退款及退貨。</AtList>
+                <AtList>{I18n.ticketNotice1}</AtList>
+                <AtList>{I18n.ticketNotice2}</AtList>
+                <AtList>{I18n.ticketNotice3}</AtList>
+                <AtList>{I18n.ticketNotice4}</AtList>
+                <AtList>{I18n.ticketNotice5}</AtList>
+                <AtList>{I18n.ticketNotice6}</AtList>
+                <AtList>{I18n.ticketNotice7}</AtList>
+                <AtList>{I18n.ticketNotice8}</AtList>
+                <AtList>{I18n.ticketNotice9}</AtList>
               </View>
 
               <View className='confirm-button'>
@@ -448,7 +449,7 @@ export default class Routes extends Component<{}, State> {
                   disabled={this.state.loading}
                   loading={this.state.loading}
                   onClick={() => !this.state.loading && this.handleConfirmSelection()}
-                >提交</AtButton>
+                >{I18n.submit}</AtButton>
               </View>
             </>
           )}

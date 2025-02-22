@@ -5,7 +5,19 @@ import { GetOrderInfoResponse } from 'src/components/OrderInfoAPI';
 import { AtAccordion, AtActivityIndicator, AtCard, AtDivider, AtList } from 'taro-ui';
 import logo from '../../../src/image/logo-no.png';
 import { getOrderInfo } from '../../api/api';
+import { I18n } from '../../I18n';
 import './index.scss';
+
+interface OrderDetailItem {
+    cost: string;
+    runTime: string;
+    depatureOriginName: string;
+    depatureDestinatName: string;
+    onAddress: string;
+    offAddress: string;
+    ticketCode: string;
+    runDate: string;
+}
 
 interface State {
     orderNoList: string[];
@@ -63,11 +75,47 @@ export default class TicketListPage extends Component<{}, State> {
             })
             .catch(() => {
                 Taro.showToast({
-                    title: 'Error fetching order list',
+                    title: I18n.getOrderInfoFailed,
                     icon: 'none',
                 });
                 this.setState({ loading: false });
             });
+    }
+
+    isSingleOrderDetail = (orderDetailLst: any): orderDetailLst is OrderDetailItem => {
+        return !Array.isArray(orderDetailLst) && 
+            typeof orderDetailLst === 'object' && 
+            'cost' in orderDetailLst &&
+            'runTime' in orderDetailLst &&
+            'depatureOriginName' in orderDetailLst &&
+            'depatureDestinatName' in orderDetailLst &&
+            'onAddress' in orderDetailLst &&
+            'offAddress' in orderDetailLst &&
+            'ticketCode' in orderDetailLst &&
+            'runDate' in orderDetailLst;
+    }
+
+    handleQRCodeClick = (ticketCode: string) => {
+        Taro.previewImage({
+            urls: [`https://api.qrserver.com/v1/create-qr-code/?data=${ticketCode}&size=600x600`]
+        });
+    }
+
+    renderQRCode = (ticketCode: string) => {
+        return (
+            <View className='qr-section'>
+                <View
+                    className='qr-code-container'
+                    onClick={() => this.handleQRCodeClick(ticketCode)}
+                >
+                    <Image
+                        src={`https://api.qrserver.com/v1/create-qr-code/?data=${ticketCode}&size=400x400`}
+                        className='qr-code'
+                    />
+                </View>
+                <Text className='qr-code-text'>{ticketCode}</Text>
+            </View>
+        );
     }
 
     render() {
@@ -80,21 +128,21 @@ export default class TicketListPage extends Component<{}, State> {
         if (orderList.length === 0) {
             return (
                 <View className='empty-list'>
-                    <Text>列表為空</Text>
+                    <Text>{I18n.noTicketInfo}</Text>
                 </View>
             );
         }
 
         return (
             <View className='container'>
-                <AtDivider content='訂單列表'/>
+                <AtDivider content={I18n.myTickets}/>
                 {orderList.map((order) => (
                     <AtAccordion
                         className='accordion'
                         key={order.orderNo}
                         open={openAccordions[order.orderNo] || false}
                         onClick={() => this.handleClick(order.orderNo)}
-                        title={`訂單號: ${order.orderNo} | 總價: $${this.formatPrice(order.orderCost)}`}
+                        title={`${I18n.ticketNumber}: ${order.orderNo} | ${I18n.ticketCost}: $${this.formatPrice(order.orderCost)}`}
                     >
                         <AtList>
                             {Array.isArray(order.orderDetailLst) ? 
@@ -106,100 +154,73 @@ export default class TicketListPage extends Component<{}, State> {
                                         <View className='ticket-header'>
                                             <Image className='company-logo' src={logo} />
                                             <View className='service-hotline-container'>
-                                                <Text className='service-hotline-title'>服務熱線：</Text>
+                                                <Text className='service-hotline-title'>{I18n.customerService}：</Text>
                                                 <Text className='service-hotline'>(852)29798778</Text>
                                                 <Text className='service-hotline'>(86)4008822322</Text>
                                             </View>
                                         </View>
                                         
                                         <View className='ticket-cost'>
-                                            <Text>票價：${this.formatPrice(detail.cost)}</Text>
+                                            <Text>{I18n.ticketCost}：${this.formatPrice(detail.cost)}</Text>
                                         </View>
 
                                         <View className='ticket-route'>
-                                            <Text className='run-time'>開車時間：{detail.runTime}</Text>
+                                            <Text className='run-time'>{I18n.departureTime}：{detail.runTime}</Text>
                                             <Text className='route-text'>{detail.depatureOriginName} → {detail.depatureDestinatName}</Text>
-                                            <Text className='on-board-text'><Text style={{fontWeight: 'bold'}}>上車地點：</Text>{'\n'}{detail.onAddress}</Text>
-                                            <Text className='off-board-text'><Text style={{fontWeight: 'bold'}}>下車地點：</Text>{'\n'}{detail.offAddress}</Text>
+                                            <Text className='on-board-text'><Text style={{fontWeight: 'bold'}}>{I18n.departure}：</Text>{'\n'}{detail.onAddress}</Text>
+                                            <Text className='off-board-text'><Text style={{fontWeight: 'bold'}}>{I18n.destination}：</Text>{'\n'}{detail.offAddress}</Text>
                                         </View>
 
                                         <View className='ticket-info'>
-                                            <Text>票號：{detail.ticketCode}</Text>
-                                            <Text>日期(日/月/年)：{detail.runDate}</Text>
+                                            <Text>{I18n.ticketNumber}：{detail.ticketCode}</Text>
+                                            <Text>{I18n.departureDate}：{detail.runDate}</Text>
                                         </View>
 
-                                        <View className='qr-section'>
-                                            <View
-                                                className='qr-code-container'
-                                                onClick={() => Taro.previewImage({
-                                                    urls: [`https://api.qrserver.com/v1/create-qr-code/?data=${detail.ticketCode}&size=600x600`]
-                                                })}
-                                            >
-                                                <Image
-                                                    src={`https://api.qrserver.com/v1/create-qr-code/?data=${detail.ticketCode}&size=400x400`}
-                                                    className='qr-code'
-                                                />
-                                            </View>
-
-                                            <Text className='qr-code-text'>{detail.ticketCode}</Text>
-                                        </View>
+                                        {this.renderQRCode(detail.ticketCode)}
 
                                         <View className='ticket-footer'>
-                                            <Text className='notice-text'>請細閱後頁的"客運服務條款"</Text>
+                                            <Text className='notice-text'>{I18n.ticketNotice1}</Text>
                                             <Text className='notice-text-en'>Please read "NOTICE TO PASSENGERS AND TERMS" on the back of tickets.</Text>
                                         </View>
                                     </AtCard>
-                                )) : 
-                                <AtCard
-                                    key={`${order.orderNo}-0`}
-                                    className='ticket-card'
-                                >
-                                    <View className='ticket-header'>
-                                        <Image className='company-logo' src={logo} />
-                                        <View className='service-hotline-container'>
-                                            <Text className='service-hotline-title'>服務熱線：</Text>
-                                            <Text className='service-hotline'>(852)29798778</Text>
-                                            <Text className='service-hotline'>(86)4008822322</Text>
+                                )) : this.isSingleOrderDetail(order.orderDetailLst) && (
+                                    <AtCard
+                                        key={`${order.orderNo}-0`}
+                                        className='ticket-card'
+                                    >
+                                        <View className='ticket-header'>
+                                            <Image className='company-logo' src={logo} />
+                                            <View className='service-hotline-container'>
+                                                <Text className='service-hotline-title'>{I18n.customerService}：</Text>
+                                                <Text className='service-hotline'>(852)29798778</Text>
+                                                <Text className='service-hotline'>(86)4008822322</Text>
+                                            </View>
                                         </View>
-                                    </View>
-                                    
-                                    <View className='ticket-cost'>
-                                        <Text>票價：${this.formatPrice(order.orderDetailLst.cost)}</Text>
-                                    </View>
-
-                                    <View className='ticket-route'>
-                                        <Text className='run-time'>開車時間：{order.orderDetailLst.runTime}</Text>
-                                        <Text className='route-text'>{order.orderDetailLst.depatureOriginName} → {order.orderDetailLst.depatureDestinatName}</Text>
-                                        <Text className='on-board-text'><Text style={{fontWeight: 'bold'}}>上車地點：</Text>{'\n'}{order.orderDetailLst.onAddress}</Text>
-                                        <Text className='off-board-text'><Text style={{fontWeight: 'bold'}}>下車地點：</Text>{'\n'}{order.orderDetailLst.offAddress}</Text>
-                                    </View>
-
-                                    <View className='ticket-info'>
-                                        <Text>票號：{order.orderDetailLst.ticketCode}</Text>
-                                        <Text>日期(日/月/年)：{order.orderDetailLst.runDate}</Text>
-                                    </View>
-
-                                    <View className='qr-section'>
-                                        <View
-                                            className='qr-code-container'
-                                            onClick={() => Taro.previewImage({
-                                                urls: [`https://api.qrserver.com/v1/create-qr-code/?data=${order.orderDetailLst.ticketCode}&size=600x600`]
-                                            })}
-                                        >
-                                            <Image
-                                                src={`https://api.qrserver.com/v1/create-qr-code/?data=${order.orderDetailLst.ticketCode}&size=400x400`}
-                                                className='qr-code'
-                                            />
+                                        
+                                        <View className='ticket-cost'>
+                                            <Text>{I18n.ticketCost}：${this.formatPrice(order.orderDetailLst.cost)}</Text>
                                         </View>
 
-                                        <Text className='qr-code-text'>{order.orderDetailLst.ticketCode}</Text>
-                                    </View>
+                                        <View className='ticket-route'>
+                                            <Text className='run-time'>{I18n.departureTime}：{order.orderDetailLst.runTime}</Text>
+                                            <Text className='route-text'>{order.orderDetailLst.depatureOriginName} → {order.orderDetailLst.depatureDestinatName}</Text>
+                                            <Text className='on-board-text'><Text style={{fontWeight: 'bold'}}>{I18n.departure}：</Text>{'\n'}{order.orderDetailLst.onAddress}</Text>
+                                            <Text className='off-board-text'><Text style={{fontWeight: 'bold'}}>{I18n.destination}：</Text>{'\n'}{order.orderDetailLst.offAddress}</Text>
+                                        </View>
 
-                                    <View className='ticket-footer'>
-                                        <Text className='notice-text'>請細閱後頁的"客運服務條款"</Text>
-                                        <Text className='notice-text-en'>Please read "NOTICE TO PASSENGERS AND TERMS" on the back of tickets.</Text>
-                                    </View>
-                                </AtCard>
+                                        <View className='ticket-info'>
+                                            <Text>{I18n.ticketNumber}：{order.orderDetailLst.ticketCode}</Text>
+                                            <Text>{I18n.departureDate}：{order.orderDetailLst.runDate}</Text>
+                                        </View>
+
+                                        {this.renderQRCode(order.orderDetailLst.ticketCode)}
+
+                                        <View className='ticket-footer'>
+                                            <Text className='notice-text'>{I18n.ticketNotice1}</Text>
+                                            <Text className='notice-text-en'>Please read "NOTICE TO PASSENGERS AND TERMS" on the back of tickets.</Text>
+                                        </View>
+                                    </AtCard>
+                                )
                             }
                         </AtList>
                     </AtAccordion>

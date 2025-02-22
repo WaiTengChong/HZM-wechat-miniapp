@@ -5,6 +5,7 @@ import { TicketResponse } from 'src/components/getTicketsAPI';
 import { ReservationResponse } from 'src/components/reservationsAPI';
 import { AtButton, AtCard, AtDivider, AtForm, AtInputNumber, AtList, AtListItem } from "taro-ui";
 import { createReservation, getTickets } from '../../api/api'; // Import the API method
+import { I18n } from '../../I18n';
 import "./index.scss";
 interface State {
   ticket: Ticket;
@@ -154,7 +155,7 @@ export default class PassengerForm extends Component<{}, State> {
 
   handleSubmit = async () => {
     Taro.showLoading({
-      title: '提交中...',
+      title: I18n.submitting,
       mask: true
     });
 
@@ -162,7 +163,7 @@ export default class PassengerForm extends Component<{}, State> {
 
     if (this.formatPassengersName() === "") {
       Taro.hideLoading();
-      Taro.showToast({ title: "乘客信息不能为空", icon: "none" });
+      Taro.showToast({ title: I18n.passengerInfoEmpty, icon: "none" });
       return;
     };
       
@@ -228,7 +229,7 @@ export default class PassengerForm extends Component<{}, State> {
             Taro.setStorageSync("orderList", orderList);
             Taro.setStorageSync("ticket", getTicketsResponse);
 
-            Taro.showToast({ title: "提交成功", icon: "success" });
+            Taro.showToast({ title: I18n.submitSuccess, icon: "success" });
             Taro.navigateTo({
               url: '/pages/order/index'
             });
@@ -249,7 +250,7 @@ export default class PassengerForm extends Component<{}, State> {
 
       //call getTickets 锁票确认
     } catch (error) {
-      Taro.showToast({ title: "提交失败", icon: "none" });
+      Taro.showToast({ title: I18n.submitFailed, icon: "none" });
       console.error("API Error:", error);
     }
   };
@@ -321,17 +322,17 @@ export default class PassengerForm extends Component<{}, State> {
             key={ticket?.runId}
             title={ticket?.tpa ? (
               `${Array.isArray(ticket.tpa) ? ticket.tpa[1]?.beginStopName || '' : ticket.tpa?.beginStopName || ''} → ${Array.isArray(ticket.tpa) ? ticket.tpa[1]?.endStopName || '' : ticket.tpa?.endStopName || ''}`
-            ) : '載入中...'}
+            ) : I18n.loading}
           >
             <AtList>
-              <AtListItem title='發車時間' extraText={ticket?.runStartTime} disabled={false} />
-              <AtListItem title='價錢' extraText={ticket?.tpa ? `$${Array.isArray(ticket.tpa) ? ticket.tpa[1]?.pricesStr || '-' : ticket.tpa?.pricesStr || '-'}` : '載入中...'} disabled={false} />
+              <AtListItem title={I18n.departureTime} extraText={ticket?.runStartTime} disabled={false} />
+              <AtListItem title={I18n.price} extraText={ticket?.tpa ? `$${Array.isArray(ticket.tpa) ? ticket.tpa[1]?.pricesStr || '-' : ticket.tpa?.pricesStr || '-'}` : I18n.loading} disabled={false} />
             </AtList>
             {Array.isArray(ticket?.tpa) ? (
               ticket.tpa.map((tpa) => (
                 <AtList key={tpa.ticketTypeId}>
                   <AtListItem
-                    title={`${tpa.ticketType} 票價: $${tpa.fee}`}
+                    title={`${tpa.ticketType} ${I18n.ticketPrice}: $${tpa.fee}`}
                     extraText={""}
                     hasBorder={true}
                     iconInfo={{ size: 20, color: "dark-green", value: "money" }}
@@ -361,7 +362,7 @@ export default class PassengerForm extends Component<{}, State> {
             ) : (ticket?.tpa && !Array.isArray(ticket.tpa)) ? (
               <AtList key={ticket.tpa.ticketTypeId}>
                 <AtListItem
-                  title={`${ticket.tpa.ticketType} 票價: $${ticket.tpa.fee}`}
+                  title={`${ticket.tpa.ticketType} ${I18n.ticketPrice}: $${ticket.tpa.fee}`}
                   extraText={""}
                   hasBorder={true}
                   iconInfo={{ size: 20, color: "dark-green", value: "money" }}
@@ -400,22 +401,22 @@ export default class PassengerForm extends Component<{}, State> {
           {firstPassenger && (
             <View className="form-container">
               <AtForm>
-                <AtDivider content={`乘客資料 ${firstPassenger.ticketCategoryName}`} />
-                <Text className="title">乘客姓名</Text>
+                <AtDivider content={`${I18n.passengerInfo} ${firstPassenger.ticketCategoryName}`} />
+                <Text className="title">{I18n.passengerName}</Text>
                 <View className='input-container'>
                   <Input
                     name="passengerName"
                     type="text"
-                    placeholder="請輸入乘客姓名"
+                    placeholder={I18n.enterPassengerName}
                     value={firstPassenger.passengers || ""}
                     onInput={(e) => this.handleInputChange(0, firstTicketId, firstTpaId!, 'name', e.detail.value)}
                   />
                 </View>
-                <Text className="title">乘客電話</Text>
+                <Text className="title">{I18n.passengerPhone}</Text>
                 <View className='input-container'>
                   <Input
                     name="passengerTel"
-                    placeholder="請輸入乘客電話"
+                    placeholder={I18n.enterPassengerPhone}
                     value={firstPassenger.passengerTels || ""}
                     onInput={(e) => this.handleInputChange(0, firstTicketId, firstTpaId!, 'tel', e.detail.value)}
                   />
@@ -437,7 +438,7 @@ export default class PassengerForm extends Component<{}, State> {
               passenger.passengers && passenger.passengerTels
             ) && (
                 <AtButton type="primary" className='submit-button' onClick={this.handleSubmit}>
-                  提交
+                  {I18n.submit}
                 </AtButton>
               )}
           </View>

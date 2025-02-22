@@ -12,7 +12,7 @@ import { ReservationResponse } from "src/components/reservationsAPI";
 import { RemoteSetting } from "../types/remoteSettings";
 
 const baseUrl = "http://113.98.201.46:8050/cnhkbusapi2.2/rest/cl_basic_info";
-const localhosturl = "http://39.108.61.92:8081/";
+const localhosturl = "https://alteronetech.top/";
 //const localhosturl = "http://localhost:8081/";
 const userName = "HK059api"; // Replace with your actual username
 const apiPassword = "1S3E8E49-D31C-0519B-3A16-7D4A04C623B5A"; // Replace with your actual password
@@ -451,6 +451,8 @@ const wxLogin = () => {
           },
           success: (res) => {
             if (res.data.messageCode == 0) {
+          
+
               Taro.showToast({
                 title: "登录成功",
                 icon: "success",
