@@ -31,6 +31,7 @@ const GET_TICKET_INFO = "web/getTicketInfo";
 const WX_LOGIN = "web/wxLogin";
 const CREATE_WECHAT_PAY_JSAPI = "pay/createWechatPayJsapi";
 const GET_WECHAT_REQUEST_PAYMENT = "pay/getWechatRequestPayment";
+const GET_ORDER_LIST = "web/getOrderList";
 
 const makeAPICall = async (
   path: string,
@@ -302,7 +303,6 @@ const createReservation = async (
   departure_date: string
 ): Promise<ReservationResponse> => {
   const encryptedPassengers = encrypt(passengers);
-
   const response = await makeAPICall(
     RESERVATIONS,
     "POST",
@@ -335,6 +335,7 @@ const getTickets = async (
   price: string,
   trackNo: string
 ): Promise<TicketResponse> => {
+  const AUTH_TICKET = Taro.getStorageSync("AUTH_TICKET");
   const response = await makeAPICall(
     GET_TICKETS,
     "POST",
@@ -353,6 +354,7 @@ const getTickets = async (
         dayjs().unix().toString()
       ),
       format: "json",
+      auth_key: AUTH_TICKET,
     },
     {
       Accept: "*/*",
@@ -431,6 +433,27 @@ const getTicketInfo = async (
   return response;
 };
 
+const getOrderList = async () => {
+  const AUTH_TICKET = Taro.getStorageSync("AUTH_TICKET");
+  const response = await makeAPICall(
+    GET_ORDER_LIST,
+    "POST",
+    {
+      auth_key: AUTH_TICKET,
+    },
+    {
+      Accept: "*/*",
+      "Accept-Language": "en,zh;q=0.9,zh-CN;q=0.8,zh-TW;q=0.7",
+      "Cache-Control": "no-cache",
+      "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
+      DNT: "1",
+      web: "1",
+    }
+  );
+  console.log("response", response);
+  return response;
+};
+
 const wxLogin = () => {
   //清除缓存
   Taro.clearStorageSync();
@@ -489,8 +512,7 @@ const wxLogin = () => {
 
 export {
   apiPassword,
-  baseUrl,
-  cancelOrder,
+  baseUrl, cancelOrder,
   createOrder,
   createReservation,
   fetchRoutesAPILocal,
@@ -498,8 +520,7 @@ export {
   getBusLine,
   getDeparturesZL,
   getLocationByRoute,
-  getOrderInfo,
-  getRemoteSettings,
+  getOrderInfo, getOrderList, getRemoteSettings,
   getTicketInfo,
   getTickets,
   localhosturl,

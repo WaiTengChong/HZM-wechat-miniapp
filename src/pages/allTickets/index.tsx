@@ -4,7 +4,7 @@ import { Component } from 'react';
 import { GetOrderInfoResponse } from 'src/components/OrderInfoAPI';
 import { AtAccordion, AtActivityIndicator, AtCard, AtDivider, AtList } from 'taro-ui';
 import logo from '../../../src/image/logo-no.png';
-import { getOrderInfo } from '../../api/api';
+import { getOrderInfo, getOrderList } from '../../api/api';
 import { I18n } from '../../I18n';
 import './index.scss';
 
@@ -21,26 +21,68 @@ interface OrderDetailItem {
 
 interface State {
     orderNoList: string[];
-    orderList: GetOrderInfoResponse[];
+    orderList: { [key: string]: GetOrderInfoResponse };
     loading: boolean;
+    loadingOrders: { [key: string]: boolean };
     openAccordions: { [key: string]: boolean };
 }
 
 export default class TicketListPage extends Component<{}, State> {
     state: State = {
         orderNoList: [],
-        orderList: [],
+        orderList: {},
         loading: true,
+        loadingOrders: {},
         openAccordions: {},
     };
 
-    handleClick = (orderNo: string) => {
+    handleClick = async (orderNo: string) => {
+        const { orderList, openAccordions, loadingOrders } = this.state;
+        
+        // Toggle accordion state
+        const newOpenState = !openAccordions[orderNo];
         this.setState(prevState => ({
             openAccordions: {
                 ...prevState.openAccordions,
-                [orderNo]: !prevState.openAccordions[orderNo]
+                [orderNo]: newOpenState
             }
         }));
+
+        // If opening and order details not loaded yet, fetch them
+        if (newOpenState && !orderList[orderNo]) {
+            this.setState(prevState => ({
+                loadingOrders: {
+                    ...prevState.loadingOrders,
+                    [orderNo]: true
+                }
+            }));
+
+            try {
+                const orderInfo = await getOrderInfo(orderNo);
+                this.setState(prevState => ({
+                    orderList: {
+                        ...prevState.orderList,
+                        [orderNo]: orderInfo
+                    },
+                    loadingOrders: {
+                        ...prevState.loadingOrders,
+                        [orderNo]: false
+                    }
+                }));
+            } catch (error) {
+                console.error(`Error fetching order ${orderNo}:`, error);
+                Taro.showToast({
+                    title: I18n.getOrderInfoFailed,
+                    icon: 'none',
+                });
+                this.setState(prevState => ({
+                    loadingOrders: {
+                        ...prevState.loadingOrders,
+                        [orderNo]: false
+                    }
+                }));
+            }
+        }
     }
 
     formatPrice(price: string): string {
@@ -48,38 +90,21 @@ export default class TicketListPage extends Component<{}, State> {
         return formattedPrice.endsWith('.00') ? parseFloat(price).toFixed(0) : formattedPrice;
     }
 
-    componentDidMount() {
-        const orderNoList = Taro.getStorageSync('orderList') || [];
-        this.setState({orderNoList:orderNoList});
-        if (orderNoList.length === 0) {
+    componentDidMount = async () => {
+        try {
+            const orderNoList = await getOrderList();
+            this.setState({
+                orderNoList: orderNoList,
+                loading: false
+            });
+        } catch (error) {
+            console.error('Error fetching order list:', error);
+            Taro.showToast({
+                title: I18n.getOrderInfoFailed,
+                icon: 'none',
+            });
             this.setState({ loading: false });
-        } else {
-            this.setState({ orderNoList }, async () => {
-                this.fetchOrderList();
-            });
         }
-    }
-
-    fetchOrderList = () => {
-        Promise.all(this.state.orderNoList.map(async orderNo => {
-            try {
-                return await getOrderInfo(orderNo);
-            } catch (error) {
-                console.error(`Error fetching order ${orderNo}:`, error);
-                return null;
-            }
-        }))
-            .then((orderData) => {
-                const validOrders = orderData.filter((order): order is GetOrderInfoResponse => order !== null);
-                this.setState({ orderList: validOrders, loading: false });
-            })
-            .catch(() => {
-                Taro.showToast({
-                    title: I18n.getOrderInfoFailed,
-                    icon: 'none',
-                });
-                this.setState({ loading: false });
-            });
     }
 
     isSingleOrderDetail = (orderDetailLst: any): orderDetailLst is OrderDetailItem => {
@@ -119,13 +144,13 @@ export default class TicketListPage extends Component<{}, State> {
     }
 
     render() {
-        const { loading, orderList, openAccordions } = this.state;
+        const { loading, orderNoList, orderList, openAccordions, loadingOrders } = this.state;
 
         if (loading) {
             return <AtActivityIndicator mode='center' />;
         }
 
-        if (orderList.length === 0) {
+        if (orderNoList.length === 0) {
             return (
                 <View className='empty-list'>
                     <Text>{I18n.noTicketInfo}</Text>
@@ -136,95 +161,108 @@ export default class TicketListPage extends Component<{}, State> {
         return (
             <View className='container'>
                 <AtDivider content={I18n.myTickets}/>
-                {orderList.map((order) => (
-                    <AtAccordion
-                        className='accordion'
-                        key={order.orderNo}
-                        open={openAccordions[order.orderNo] || false}
-                        onClick={() => this.handleClick(order.orderNo)}
-                        title={`${I18n.ticketNumber}: ${order.orderNo} | ${I18n.ticketCost}: $${this.formatPrice(order.orderCost)}`}
-                    >
-                        <AtList>
-                            {Array.isArray(order.orderDetailLst) ? 
-                                order.orderDetailLst.map((detail, index) => (
-                                    <AtCard
-                                        key={`${order.orderNo}-${index}`}
-                                        className='ticket-card'
-                                    >
-                                        <View className='ticket-header'>
-                                            <Image className='company-logo' src={logo} />
-                                            <View className='service-hotline-container'>
-                                                <Text className='service-hotline-title'>{I18n.customerService}：</Text>
-                                                <Text className='service-hotline'>(852)29798778</Text>
-                                                <Text className='service-hotline'>(86)4008822322</Text>
-                                            </View>
-                                        </View>
-                                        
-                                        <View className='ticket-cost'>
-                                            <Text>{I18n.ticketCost}：${this.formatPrice(detail.cost)}</Text>
-                                        </View>
+                {orderNoList.map((orderNo) => {
+                    const order = orderList[orderNo];
+                    const isLoading = loadingOrders[orderNo];
+                    const isOpen = openAccordions[orderNo] || false;
 
-                                        <View className='ticket-route'>
-                                            <Text className='run-time'>{I18n.departureTime}：{detail.runTime}</Text>
-                                            <Text className='route-text'>{detail.depatureOriginName} → {detail.depatureDestinatName}</Text>
-                                            <Text className='on-board-text'><Text style={{fontWeight: 'bold'}}>{I18n.departure}：</Text>{'\n'}{detail.onAddress}</Text>
-                                            <Text className='off-board-text'><Text style={{fontWeight: 'bold'}}>{I18n.destination}：</Text>{'\n'}{detail.offAddress}</Text>
-                                        </View>
+                    return (
+                        <AtAccordion
+                            isAnimation={false}
+                            className='accordion'
+                            key={orderNo}
+                            open={isOpen}
+                            onClick={() => this.handleClick(orderNo)}
+                            title={`${I18n.ticketNumber}: ${orderNo}${order ? ` | ${I18n.ticketCost}: $${this.formatPrice(order.orderCost)}` : ''}`}
+                        >
+                            {isLoading ? (
+                                <View className='loading-container'>
+                                    <AtActivityIndicator mode='center' />
+                                </View>
+                            ) : order && (
+                                <AtList>
+                                    {Array.isArray(order.orderDetailLst) ? 
+                                        order.orderDetailLst.map((detail, index) => (
+                                            <AtCard
+                                                key={`${orderNo}-${index}`}
+                                                className='ticket-card'
+                                            >
+                                                <View className='ticket-header'>
+                                                    <Image className='company-logo' src={logo} />
+                                                    <View className='service-hotline-container'>
+                                                        <Text className='service-hotline-title'>{I18n.customerService}：</Text>
+                                                        <Text className='service-hotline'>(852)29798778</Text>
+                                                        <Text className='service-hotline'>(86)4008822322</Text>
+                                                    </View>
+                                                </View>
+                                                
+                                                <View className='ticket-cost'>
+                                                    <Text>{I18n.ticketCost}：${this.formatPrice(detail.cost)}</Text>
+                                                </View>
 
-                                        <View className='ticket-info'>
-                                            <Text>{I18n.ticketNumber}：{detail.ticketCode}</Text>
-                                            <Text>{I18n.departureDate}：{detail.runDate}</Text>
-                                        </View>
+                                                <View className='ticket-route'>
+                                                    <Text className='run-time'>{I18n.departureTime}：{detail.runTime}</Text>
+                                                    <Text className='route-text'>{detail.depatureOriginName} → {detail.depatureDestinatName}</Text>
+                                                    <Text className='on-board-text'><Text style={{fontWeight: 'bold'}}>{I18n.departure}：</Text>{'\n'}{detail.onAddress}</Text>
+                                                    <Text className='off-board-text'><Text style={{fontWeight: 'bold'}}>{I18n.destination}：</Text>{'\n'}{detail.offAddress}</Text>
+                                                </View>
 
-                                        {this.renderQRCode(detail.ticketCode)}
+                                                <View className='ticket-info'>
+                                                    <Text>{I18n.ticketNumber}：{detail.ticketCode}</Text>
+                                                    <Text>{I18n.departureDate}：{detail.runDate}</Text>
+                                                </View>
 
-                                        <View className='ticket-footer'>
-                                            <Text className='notice-text'>{I18n.ticketNotice1}</Text>
-                                            <Text className='notice-text-en'>Please read "NOTICE TO PASSENGERS AND TERMS" on the back of tickets.</Text>
-                                        </View>
-                                    </AtCard>
-                                )) : this.isSingleOrderDetail(order.orderDetailLst) && (
-                                    <AtCard
-                                        key={`${order.orderNo}-0`}
-                                        className='ticket-card'
-                                    >
-                                        <View className='ticket-header'>
-                                            <Image className='company-logo' src={logo} />
-                                            <View className='service-hotline-container'>
-                                                <Text className='service-hotline-title'>{I18n.customerService}：</Text>
-                                                <Text className='service-hotline'>(852)29798778</Text>
-                                                <Text className='service-hotline'>(86)4008822322</Text>
-                                            </View>
-                                        </View>
-                                        
-                                        <View className='ticket-cost'>
-                                            <Text>{I18n.ticketCost}：${this.formatPrice(order.orderDetailLst.cost)}</Text>
-                                        </View>
+                                                {this.renderQRCode(detail.ticketCode)}
 
-                                        <View className='ticket-route'>
-                                            <Text className='run-time'>{I18n.departureTime}：{order.orderDetailLst.runTime}</Text>
-                                            <Text className='route-text'>{order.orderDetailLst.depatureOriginName} → {order.orderDetailLst.depatureDestinatName}</Text>
-                                            <Text className='on-board-text'><Text style={{fontWeight: 'bold'}}>{I18n.departure}：</Text>{'\n'}{order.orderDetailLst.onAddress}</Text>
-                                            <Text className='off-board-text'><Text style={{fontWeight: 'bold'}}>{I18n.destination}：</Text>{'\n'}{order.orderDetailLst.offAddress}</Text>
-                                        </View>
+                                                <View className='ticket-footer'>
+                                                    <Text className='notice-text'>{I18n.ticketNotice1}</Text>
+                                                    <Text className='notice-text-en'>Please read "NOTICE TO PASSENGERS AND TERMS" on the back of tickets.</Text>
+                                                </View>
+                                            </AtCard>
+                                        )) : this.isSingleOrderDetail(order.orderDetailLst) && (
+                                            <AtCard
+                                                key={`${orderNo}-0`}
+                                                className='ticket-card'
+                                            >
+                                                <View className='ticket-header'>
+                                                    <Image className='company-logo' src={logo} />
+                                                    <View className='service-hotline-container'>
+                                                        <Text className='service-hotline-title'>{I18n.customerService}：</Text>
+                                                        <Text className='service-hotline'>(852)29798778</Text>
+                                                        <Text className='service-hotline'>(86)4008822322</Text>
+                                                    </View>
+                                                </View>
+                                                
+                                                <View className='ticket-cost'>
+                                                    <Text>{I18n.ticketCost}：${this.formatPrice(order.orderDetailLst.cost)}</Text>
+                                                </View>
 
-                                        <View className='ticket-info'>
-                                            <Text>{I18n.ticketNumber}：{order.orderDetailLst.ticketCode}</Text>
-                                            <Text>{I18n.departureDate}：{order.orderDetailLst.runDate}</Text>
-                                        </View>
+                                                <View className='ticket-route'>
+                                                    <Text className='run-time'>{I18n.departureTime}：{order.orderDetailLst.runTime}</Text>
+                                                    <Text className='route-text'>{order.orderDetailLst.depatureOriginName} → {order.orderDetailLst.depatureDestinatName}</Text>
+                                                    <Text className='on-board-text'><Text style={{fontWeight: 'bold'}}>{I18n.departure}：</Text>{'\n'}{order.orderDetailLst.onAddress}</Text>
+                                                    <Text className='off-board-text'><Text style={{fontWeight: 'bold'}}>{I18n.destination}：</Text>{'\n'}{order.orderDetailLst.offAddress}</Text>
+                                                </View>
 
-                                        {this.renderQRCode(order.orderDetailLst.ticketCode)}
+                                                <View className='ticket-info'>
+                                                    <Text>{I18n.ticketNumber}：{order.orderDetailLst.ticketCode}</Text>
+                                                    <Text>{I18n.departureDate}：{order.orderDetailLst.runDate}</Text>
+                                                </View>
 
-                                        <View className='ticket-footer'>
-                                            <Text className='notice-text'>{I18n.ticketNotice1}</Text>
-                                            <Text className='notice-text-en'>Please read "NOTICE TO PASSENGERS AND TERMS" on the back of tickets.</Text>
-                                        </View>
-                                    </AtCard>
-                                )
-                            }
-                        </AtList>
-                    </AtAccordion>
-                ))}
+                                                {this.renderQRCode(order.orderDetailLst.ticketCode)}
+
+                                                <View className='ticket-footer'>
+                                                    <Text className='notice-text'>{I18n.ticketNotice1}</Text>
+                                                    <Text className='notice-text-en'>Please read "NOTICE TO PASSENGERS AND TERMS" on the back of tickets.</Text>
+                                                </View>
+                                            </AtCard>
+                                        )
+                                    }
+                                </AtList>
+                            )}
+                        </AtAccordion>
+                    );
+                })}
             </View>
         );
     }

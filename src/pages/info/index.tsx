@@ -332,7 +332,7 @@ export default class PassengerForm extends Component<{}, State> {
               ticket.tpa.map((tpa) => (
                 <AtList key={tpa.ticketTypeId}>
                   <AtListItem
-                    title={`${tpa.ticketType} ${I18n.ticketPrice}: $${tpa.fee}`}
+                    title={`${tpa.ticketType}: $${tpa.fee}`}
                     extraText={""}
                     hasBorder={true}
                     iconInfo={{ size: 20, color: "dark-green", value: "money" }}
@@ -362,7 +362,7 @@ export default class PassengerForm extends Component<{}, State> {
             ) : (ticket?.tpa && !Array.isArray(ticket.tpa)) ? (
               <AtList key={ticket.tpa.ticketTypeId}>
                 <AtListItem
-                  title={`${ticket.tpa.ticketType} ${I18n.ticketPrice}: $${ticket.tpa.fee}`}
+                  title={`${ticket.tpa.ticketType}: $${ticket.tpa.fee}`}
                   extraText={""}
                   hasBorder={true}
                   iconInfo={{ size: 20, color: "dark-green", value: "money" }}

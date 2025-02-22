@@ -208,3 +208,11 @@
 .accordion {
   background-color: rgb(242, 241, 241);
 }
+
+.loading-container {
+    padding: 20px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100px;
+}
