@@ -5,10 +5,9 @@ import { AtGrid, AtIcon } from 'taro-ui';
 import "taro-ui/dist/style/components/button.scss"; // 按需引入
 import { wxLogin } from '../../api/api';
 import { I18n } from '../../I18n';
+import { RemoteSettingsService } from '../../services/remoteSettings';
 
 import logo from '../../../src/image/logo-no.png';
-import image1 from '../../../static/banner/carBanner1.png';
-import image2 from '../../../static/banner/carBanner2.png';
 import './index.scss';
 
 type State = {
@@ -16,6 +15,7 @@ type State = {
   loginStatus: boolean;
   nickName: string;
   language: string;
+  banner: string[];
 };
 
 export default class Index extends Component<PropsWithChildren, State> {
@@ -24,11 +24,14 @@ export default class Index extends Component<PropsWithChildren, State> {
     current: 0,
     loginStatus: false,
     nickName: '',
-    language: 'zh'
+    language: 'zh',
+    banner:[]
   }
 
-  componentDidMount() {
+  async componentDidMount() {
+    await RemoteSettingsService.getInstance().initialize();
     this.checkSession();
+    this.getBanner();
   }
 
   componentWillUnmount() { }
@@ -37,6 +40,13 @@ export default class Index extends Component<PropsWithChildren, State> {
   }
 
   componentDidHide() { }
+
+  getBanner = () => {
+    const banner =  RemoteSettingsService.getInstance().getList("home_banner", []);
+    this.setState({
+      banner: banner
+    });
+  }
 
   handleGridItemClick = async (index) => {
     if (index === 0) {
@@ -160,16 +170,13 @@ export default class Index extends Component<PropsWithChildren, State> {
               indicatorDots
               autoplay
             >
-              <SwiperItem>
-                <View className='demo-text-1'>
-                  <Image src={image1} />
-                </View>
-              </SwiperItem>
-              <SwiperItem>
-                <View className='demo-text-2'>
-                  <Image src={image2} />
-                </View>
-              </SwiperItem>
+              {this.state.banner && this.state.banner.length > 0 && this.state.banner.map((item, index) => (
+                <SwiperItem key={index}>
+                  <View className='demo-text-1'>
+                    <Image src={item} mode='scaleToFill' />
+                  </View>
+                </SwiperItem>
+              ))}
             </Swiper>
 
             <View className='login-card'>
@@ -184,7 +191,6 @@ export default class Index extends Component<PropsWithChildren, State> {
                       <AtIcon className='login-status-icon-check' value='check' size='20' color='#6190E8' />
                     </View>
                       <Text className='user-info'>{}</Text>
-                     
                     </>
                   ) : (
                     <View className='login-wrapper'>

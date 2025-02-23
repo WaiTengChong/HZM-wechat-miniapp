@@ -326,7 +326,7 @@ export default class PassengerForm extends Component<{}, State> {
           >
             <AtList>
               <AtListItem title={I18n.departureTime} extraText={ticket?.runStartTime} disabled={false} />
-              <AtListItem title={I18n.price} extraText={ticket?.tpa ? `$${Array.isArray(ticket.tpa) ? ticket.tpa[1]?.pricesStr || '-' : ticket.tpa?.pricesStr || '-'}` : I18n.loading} disabled={false} />
+              <AtListItem title={I18n.price} extraText={`$${this.state.addedTickets.reduce((total, tpa) => total + (parseFloat(tpa.fee) || 0), 0).toFixed(0)}`} disabled={false} />
             </AtList>
             {Array.isArray(ticket?.tpa) ? (
               ticket.tpa.map((tpa) => (

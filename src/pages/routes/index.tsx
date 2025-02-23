@@ -85,6 +85,7 @@ export default class Routes extends Component<{}, State> {
   loadRouteTime = async (date: string) => {
     this.setState({ routeTimeLoading: true });
     try {
+      Taro.showLoading({ title: '加載中...' });
       const response: DepartureZL = await getDeparturesZL(
         this.state.selectedRouteId,
         this.state.location.find(lc => lc.cname === this.state.selectedStartLocation)?.id!,
@@ -105,6 +106,7 @@ export default class Routes extends Component<{}, State> {
     } catch (error) {
       console.error('Error fetching route time:', error);
     } finally {
+      Taro.hideLoading();
       this.setState({ routeTimeLoading: false });
     }
   }
