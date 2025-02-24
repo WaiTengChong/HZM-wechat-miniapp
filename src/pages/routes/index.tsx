@@ -45,12 +45,9 @@ export default class Routes extends Component<{}, State> {
     try {
       // Initialize RemoteSettings if not already initialized
       await RemoteSettingsService.getInstance().initialize();
-
       const response = await fetchRoutesAPILocal();
       if (response.route && Array.isArray(response.route)) {
         const filteredRoute = RemoteSettingsService.getInstance().getList('routeId_allowed', []);
-        console.log(filteredRoute);
-
         // Simplified route filtering logic
         const filteredRoutes = filteredRoute.length > 0
           ? response.route.filter(route => filteredRoute.includes(route.routeId))
@@ -82,7 +79,7 @@ export default class Routes extends Component<{}, State> {
     this.setState({ loading });
   }
 
-  loadRouteTime = async (date: string) => {
+  loadRouteTime = async (date: string,isFirst:boolean = false) => {
     this.setState({ routeTimeLoading: true });
     try {
       Taro.showLoading({ title: '加載中...' });
@@ -101,7 +98,9 @@ export default class Routes extends Component<{}, State> {
         Taro.setStorageSync("ticket_date", this.state.dateSel);
       } else {
         this.setState({ ticketData: [] });
-        Taro.showToast({ title: '没有可用的车票', icon: 'none' })
+        if (!isFirst) {
+          Taro.showToast({ title: '没有可用的车票', icon: 'none' })
+        }
       }
     } catch (error) {
       console.error('Error fetching route time:', error);
@@ -143,16 +142,7 @@ export default class Routes extends Component<{}, State> {
         selectedStartLocationAddress: response.locations.filter(lc => lc.on === "true")[0].address,
         selectedEndLocationAddress: response.locations.filter(lc => lc.on === "false")[0].address,
       });
-      try {
-        await this.loadRouteTime(this.state.dateSel);
-      } catch (error) {
-        console.error('Error loading route time:', error);
-        Taro.showToast({
-          title: '加載班次失敗',
-          icon: 'none',
-          duration: 2000
-        });
-      }
+      await this.loadRouteTime(this.state.dateSel,true);
       this.setLoading(false);
     } catch (error) {
       this.setLoading(false);
@@ -191,7 +181,7 @@ export default class Routes extends Component<{}, State> {
   onStepChange = async (stepCurrent: number) => {
     // If at step 0, prevent moving forward
     if (this.state.stepCurrent === 0) {
-      return; // Do nothing when trying to move forward from step 0
+      return; 
     }
 
     // If at step 1, only allow going back to step 0
@@ -310,7 +300,7 @@ export default class Routes extends Component<{}, State> {
                   <AtGrid
                     columnNum={4}
                     data={this.state.startAreaList.map(area => ({
-                      value: area,
+                      value: area.includes('（') ? area.replace('（', '\n(').replace('）', ')') : area,
                     }))}
                     onClick={(item, index) => this.handleStartAreaClick(index)}
                   />
@@ -327,7 +317,7 @@ export default class Routes extends Component<{}, State> {
                   <AtGrid
                     columnNum={4}
                     data={this.state.endAreaList.map(area => ({
-                      value: area,
+                      value: area.includes('（') ? area.replace('（', '\n(').replace('）', ')') : area,
                     }))}
                     onClick={(item, index) => this.handleEndAreaClick(index)}
                   />

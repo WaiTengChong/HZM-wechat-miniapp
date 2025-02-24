@@ -4,7 +4,7 @@ import { Component } from 'react';
 import { TicketResponse } from 'src/components/getTicketsAPI';
 import { ReservationResponse } from 'src/components/reservationsAPI';
 import { AtButton, AtCard, AtDivider, AtForm, AtInputNumber, AtList, AtListItem } from "taro-ui";
-import { createReservation, getTickets } from '../../api/api'; // Import the API method
+import { createOrder, createReservation, getTickets, wxMakePay } from '../../api/api'; // Import the API method
 import { I18n } from '../../I18n';
 import "./index.scss";
 interface State {
@@ -99,12 +99,12 @@ export default class PassengerForm extends Component<{}, State> {
       for (const tpaId in tpaEntries) {
         const passengers = tpaEntries[tpaId];
         const passengerTels = passengers.map(p => p.passengerTels);
-        
+
         // Initialize array for this ticket type if not exists
         if (!telsByTicketType[passengers[0].ticketTypeId]) {
           telsByTicketType[passengers[0].ticketTypeId] = [];
         }
-        
+
         // Add phone numbers to the appropriate ticket type group
         telsByTicketType[passengers[0].ticketTypeId].push(...passengerTels);
       }
@@ -166,7 +166,7 @@ export default class PassengerForm extends Component<{}, State> {
       Taro.showToast({ title: I18n.passengerInfoEmpty, icon: "none" });
       return;
     };
-      
+
     try {
       const ticketsByType = this.state.addedTickets.reduce((acc, ticket) => {
         // Only add the ticketCategoryLineId if it's not already in the array
@@ -208,10 +208,10 @@ export default class PassengerForm extends Component<{}, State> {
       );
       const test = true;// remove this when go live
       if (response.errorCode === "SUCCESS") {
-        //const wxCreateOrderResponseI = await createOrder(response.orderNo, response.orderDetailLst.routeName, response.orderDetailLst.ticketCode, response.orderDetailLst.lineBc, response.orderDetailLst.routeName, response.orderDetailLst.ticketTypeId);
-        // const wxPayResponse = await wxMakePay(wxCreateOrderResponseI.prepay_id);
-        // if(wxPayResponse === "SUCCESS" || test){
-        if (test) {
+        const wxCreateOrderResponseI = await createOrder(response.orderNo, response.orderDetailLst.routeName, response.orderDetailLst.ticketCode, response.orderDetailLst.lineBc, response.orderDetailLst.routeName, response.orderDetailLst.ticketTypeId);
+        const wxPayResponse = await wxMakePay(wxCreateOrderResponseI.prepay_id);
+        if(wxPayResponse === "SUCCESS"){
+        // if (test) {
           const getTicketsResponse: TicketResponse = await getTickets(response.orderNo, response.orderPrice, response.ticketNo);
           if (getTicketsResponse.errorCode === "SUCCESS") {
             // Safely handle orderList regardless of its current type
@@ -249,9 +249,9 @@ export default class PassengerForm extends Component<{}, State> {
       }
 
       //call getTickets 锁票确认
-    } catch (error) {
+    } catch (error: any) {
       Taro.showToast({ title: I18n.submitFailed, icon: "none" });
-      console.error("API Error:", error);
+      console.error("API Error:", error.message);
     }
   };
 
@@ -308,7 +308,7 @@ export default class PassengerForm extends Component<{}, State> {
 
   render() {
     const { ticketQuantities, ticket } = this.getPassengerData();
-    
+
     // Get the first ticket and passenger for the form
     const firstTicketId = Object.keys(ticketQuantities)[0];
     const firstTpaId = firstTicketId ? Object.keys(ticketQuantities[firstTicketId])[0] : null;
@@ -376,10 +376,10 @@ export default class PassengerForm extends Component<{}, State> {
                     value={ticketQuantities[ticket?.runId]?.[ticket.tpa.ticketTypeId]?.length || 0}
                     onChange={(value) => {
                       if (ticket?.tpa && !Array.isArray(ticket.tpa)) {  // Add type guard here
-                        console.log("ticketQuantities[ticket?.runId]?.[ticket.tpa.ticketTypeId]", 
+                        console.log("ticketQuantities[ticket?.runId]?.[ticket.tpa.ticketTypeId]",
                           ticketQuantities[ticket?.runId]?.[ticket.tpa.ticketTypeId]);
-                        
-                        this.handleQuantityChange(ticket?.runId,ticket.tpa.ticketTypeId,value);
+
+                        this.handleQuantityChange(ticket?.runId, ticket.tpa.ticketTypeId, value);
 
                         if (value < (ticketQuantities[ticket?.runId]?.[ticket.tpa.ticketTypeId]?.length || 0)) {
                           const quantityDifference = (
@@ -416,9 +416,13 @@ export default class PassengerForm extends Component<{}, State> {
                 <View className='input-container'>
                   <Input
                     name="passengerTel"
+                    type="number"
                     placeholder={I18n.enterPassengerPhone}
                     value={firstPassenger.passengerTels || ""}
-                    onInput={(e) => this.handleInputChange(0, firstTicketId, firstTpaId!, 'tel', e.detail.value)}
+                    onInput={(e) => {
+                      const numericValue = e.detail.value.replace(/[^0-9]/g, '');
+                      this.handleInputChange(0, firstTicketId, firstTpaId!, 'tel', numericValue);
+                    }}
                   />
                 </View>
               </AtForm>

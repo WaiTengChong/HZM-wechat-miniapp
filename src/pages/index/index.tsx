@@ -7,7 +7,7 @@ import { wxLogin } from '../../api/api';
 import { I18n } from '../../I18n';
 import { RemoteSettingsService } from '../../services/remoteSettings';
 
-import logo from '../../../src/image/logo-no.png';
+import logo from '../../../src/image/HZM_Logo.png';
 import './index.scss';
 
 type State = {
@@ -29,9 +29,11 @@ export default class Index extends Component<PropsWithChildren, State> {
   }
 
   async componentDidMount() {
-    await RemoteSettingsService.getInstance().initialize();
+    await RemoteSettingsService.getInstance().initialize().then(() => {
+      this.getBanner();
+    });
     this.checkSession();
-    this.getBanner();
+    this.checkForLanguage();
   }
 
   componentWillUnmount() { }
@@ -48,6 +50,18 @@ export default class Index extends Component<PropsWithChildren, State> {
     });
   }
 
+  checkForLanguage = () => {
+    const language = Taro.getStorageSync("language");
+    if (language) {
+      this.setState({ language: language });
+      I18n.setLanguage(language);
+    } else {
+      Taro.setStorageSync("language", "zh");
+      this.setState({ language: "zh" });
+      I18n.setLanguage("zh");
+    }
+  }
+
   handleGridItemClick = async (index) => {
     if (index === 0) {
       Taro.navigateTo({ url: '/pages/routes/index' });
@@ -58,19 +72,6 @@ export default class Index extends Component<PropsWithChildren, State> {
     if (index === 2) {
       Taro.navigateTo({ url: '/pages/support/index' });
     }
-    // if (index === 2) {
-    //   //string loading
-    //   Taro.showLoading({
-    //     title: '加载中',
-    //   });
-    //   const payId = await createOrder("123", "City Express Bus Ticket", "1234567890");
-    //   console.log("payId", payId);
-    //   const id = payId.prepay_id;
-    //   console.log("id", id);
-    //   //end loading
-    //   Taro.hideLoading();
-    //   wxMakePay(id);
-    // }
     if (index === 4) {
     }
   }
@@ -101,12 +102,7 @@ export default class Index extends Component<PropsWithChildren, State> {
     const AUTH_TICKET = Taro.getStorageSync("AUTH_TICKET");
     const OPEN_ID = Taro.getStorageSync("OPEN_ID");
     if (!AUTH_TICKET || !OPEN_ID) {
-      Taro.showToast({
-        title: I18n.pleaseLoginFirst,
-        icon: 'error',
-        duration: 2000
-      });
-      return;
+      this.handleLogout();
     }
 
     //检测sessionkey
@@ -151,6 +147,7 @@ export default class Index extends Component<PropsWithChildren, State> {
   toggleLanguage = () => {
     const newLang = this.state.language === 'zh' ? 'hk' : 'zh';
     this.setState({ language: newLang });
+    Taro.setStorageSync("language", newLang);
     I18n.setLanguage(newLang);
   }
 
@@ -160,7 +157,7 @@ export default class Index extends Component<PropsWithChildren, State> {
         <View className='index'>
           <View className='main-content'>
             <View className='logo-container'>
-              <Image className='logo' src={logo} />
+              <Image className='logo' src={logo} mode='aspectFit' />
             </View>
             <Swiper
               className='swiper-container'

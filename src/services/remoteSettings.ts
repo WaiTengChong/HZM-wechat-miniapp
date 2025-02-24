@@ -54,17 +54,40 @@ export class RemoteSettingsService {
   private async fetchRemoteSettings(): Promise<RemoteSetting[] | null> {
     try {
       const response = await getRemoteSettings();
-
       return response as RemoteSetting[];
     } catch (error) {
-      const errorMessage = this.getErrorMessage(error);
-      console.error("Error fetching remote settings:", error);
+      // Check for specific network error
+      if (error instanceof Error && error.message.includes('Network Error')) {
+        console.error('Network connectivity issue:', error);
+        Taro.showToast({
+          title: '网络连接失败，请检查网络',
+          icon: 'none',
+          duration: 3000
+        });
+      } else {
+        const errorMessage = this.getErrorMessage(error);
+        console.error('Error fetching remote settings:', error);
+        
+        Taro.showToast({
+          title: errorMessage,
+          icon: 'none',
+          duration: 2000
+        });
+      }
 
-      Taro.showToast({
-        title: errorMessage,
-        icon: "none",
-        duration: 2000,
-      });
+      // Add retry logic
+      const retryCount = 3;
+      const retryDelay = 1000; // 1 second
+
+      for (let i = 0; i < retryCount; i++) {
+        try {
+          await new Promise(resolve => setTimeout(resolve, retryDelay));
+          const retryResponse = await getRemoteSettings();
+          return retryResponse as RemoteSetting[];
+        } catch (retryError) {
+          console.error(`Retry ${i + 1} failed:`, retryError);
+        }
+      }
 
       return null;
     }
@@ -121,14 +144,20 @@ export class RemoteSettingsService {
     if (this.initialized) return;
 
     try {
-      // Always fetch remote settings first
+      // Try loading from cache first in case of network issues
+      const cachedSettings = await this.loadLocalSettings();
+      
+      // Attempt to fetch remote settings
       const remoteData = await this.fetchRemoteSettings();
       
       if (!remoteData?.length) {
-        // If remote fetch fails, try loading from cache
-        const cachedSettings = await this.loadLocalSettings();
+        // If remote fetch fails, use cached settings
         this.settings = cachedSettings || {};
         this.initialized = true;
+        
+        if (!cachedSettings) {
+          console.warn('No cached settings available after remote fetch failure');
+        }
         return;
       }
 
@@ -140,16 +169,22 @@ export class RemoteSettingsService {
         }
       });
 
-      // Always update both memory and storage with remote settings when available
+      // Update both memory and storage
       this.settings = parsedSettings;
       this.saveLocalSettings(parsedSettings);
       this.initialized = true;
     } catch (error) {
-      console.error("Error initializing remote settings:", error);
-      // Try loading from cache if remote fetch fails
+      console.error('Error initializing remote settings:', error);
+      // Fallback to cached settings in case of complete failure
       const cachedSettings = await this.loadLocalSettings();
       this.settings = cachedSettings || {};
       this.initialized = true;
+      
+      Taro.showToast({
+        title: '使用缓存设置',
+        icon: 'none',
+        duration: 2000
+      });
     }
   }
 

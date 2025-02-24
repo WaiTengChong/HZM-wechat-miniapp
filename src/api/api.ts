@@ -12,7 +12,7 @@ import { ReservationResponse } from "src/components/reservationsAPI";
 import { RemoteSetting } from "../types/remoteSettings";
 
 const baseUrl = "http://113.98.201.46:8050/cnhkbusapi2.2/rest/cl_basic_info";
-const localhosturl = "https://alteronetech.top/";
+const localhosturl = "https://weapp.alteronetech.top/";
 //const localhosturl = "http://localhost:8081/";
 const userName = "HK059api"; // Replace with your actual username
 const apiPassword = "1S3E8E49-D31C-0519B-3A16-7D4A04C623B5A"; // Replace with your actual password
@@ -154,15 +154,29 @@ const wxMakePay = async (prepayId: string): Promise<string> => {
         success: function (res) {
           if (res.errMsg === "requestPayment:ok") {
             resolve("SUCCESS");
-          } else if (res.errMsg === "requestPayment:cancel") {
-            resolve("支付取消");
           } else {
             resolve(res.errMsg);
           }
         },
         fail: function (res) {
-          resolve(res.errMsg);
+          if (res.errMsg === "requestPayment:fail cancel") {
+            resolve("CANCELLED"); // User cancelled payment
+            Taro.showToast({
+              title: "支付取消",
+              icon: "none",
+            });
+          } else {
+            resolve("FAILED"); // Payment failed for other reasons
+            Taro.showToast({
+              title: "支付失败",
+              icon: "none",
+            });
+          }
         },
+        complete: function() {
+          // Always called when payment flow ends
+          Taro.hideLoading();
+        }
       });
     });
   } catch (error) {
