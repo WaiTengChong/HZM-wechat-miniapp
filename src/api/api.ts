@@ -14,8 +14,6 @@ import { RemoteSetting } from "../types/remoteSettings";
 const baseUrl = "http://113.98.201.46:8050/cnhkbusapi2.2/rest/cl_basic_info";
 const localhosturl = "https://weapp.alteronetech.top/";
 //const localhosturl = "http://localhost:8081/";
-const userName = "HK059api"; // Replace with your actual username
-const apiPassword = "1S3E8E49-D31C-0519B-3A16-7D4A04C623B5A"; // Replace with your actual password
 
 // Define local variables for each API endpoint
 const GET_REMOTE_SETTINGS = "web/getRemoteSettings";
@@ -106,6 +104,7 @@ const getRemoteSettings = async (): Promise<RemoteSetting[]> => {
 
 const createOrder = async (
   orderNo: string,
+  totalPrice: string,
   description: string,
   ticketCode: string,
   lineBc: string,
@@ -115,20 +114,20 @@ const createOrder = async (
   const OPEN_ID = Taro.getStorageSync("OPEN_ID");
   const response = await makeAPICall(CREATE_WECHAT_PAY_JSAPI, "POST", {
     amount: {
-      total: 1, // TODO change to the total price
+      total: totalPrice, // TODO change to the total price
     },
     description: description, // Description of the product
     goods_tag: ticketTypeId, // Tag for the bus ticket product
     out_trade_no: orderNo,
     detail: {
-      cost_price: 1, // TODO change to the total price
+      cost_price: totalPrice, // TODO change to the total price
       receipt_id: ticketCode, // Receipt ID for the transaction
       goods_detail: [
         {
           goods_id: lineBc, // Unique ID for the bus ticket
           goods_name: routeName, // Name of the bus ticket
           quantity: 1, // Quantity of tickets purchased
-          price: 1, // TODO change to the total price
+          price: totalPrice, // TODO change to the total price
         },
       ],
     },
@@ -358,15 +357,9 @@ const getTickets = async (
       price: price,
       trackNo: trackNo,
       showHKCost: "",
-      userName: userName,
       cash_Price: "",
       cash_No: "",
       timestamp: dayjs().unix().toString(),
-      signture: generateSignature(
-        userName,
-        apiPassword,
-        dayjs().unix().toString()
-      ),
       format: "json",
       auth_key: AUTH_TICKET,
     },
@@ -384,17 +377,12 @@ const getTickets = async (
 };
 
 const cancelOrder = async (orderNo: string): Promise<CancelOrderResponse> => {
-  const timestamp = dayjs().unix().toString();
-  const signature = generateSignature(userName, apiPassword, timestamp);
 
   const response = await makeAPICall(
     CANCEL_ORDER,
     "GET",
     {
       OrderNo: orderNo,
-      userName: userName,
-      timestamp: timestamp,
-      signture: signature,
       format: "json",
     }
   );
@@ -408,7 +396,6 @@ const getOrderInfo = async (orderNo: string): Promise<GetOrderInfoResponse> => {
     "POST",
     {
       OrderNo: orderNo,
-      userName: userName,
       format: "json",
     },
     {
@@ -432,7 +419,6 @@ const getTicketInfo = async (
     "POST",
     {
       ticketNos: ticketNos,
-      userName: userName,
     },
     {
       Accept: "*/*",
@@ -525,7 +511,6 @@ const wxLogin = () => {
 };
 
 export {
-  apiPassword,
   baseUrl, cancelOrder,
   createOrder,
   createReservation,
@@ -538,7 +523,6 @@ export {
   getTicketInfo,
   getTickets,
   localhosturl,
-  userName,
   wxLogin,
   wxMakePay
 };

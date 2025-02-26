@@ -232,7 +232,7 @@ export default class PassengerForm extends Component<{}, State> {
       );
       const test = true;// remove this when go live
       if (response.errorCode === "SUCCESS") {
-        const wxCreateOrderResponseI = await createOrder(response.orderNo, response.orderDetailLst.routeName, response.orderDetailLst.ticketCode, response.orderDetailLst.lineBc, response.orderDetailLst.routeName, response.orderDetailLst.ticketTypeId);
+        const wxCreateOrderResponseI = await createOrder(response.orderNo, this.getTotalPrice(), response.orderDetailLst.routeName, response.orderDetailLst.ticketCode, response.orderDetailLst.lineBc, response.orderDetailLst.routeName, response.orderDetailLst.ticketTypeId);
         const wxPayResponse = await wxMakePay(wxCreateOrderResponseI.prepay_id);
         if (wxPayResponse === "SUCCESS") {
           // if (test) {
@@ -278,6 +278,10 @@ export default class PassengerForm extends Component<{}, State> {
       console.error("API Error:", error.message);
     }
   };
+
+  getTotalPrice = () => {
+    return this.state.addedTickets.reduce((total, tpa) => total + (parseFloat(tpa.fee) || 0), 0).toFixed(0);
+  }
 
   handleQuantityChange = (ticketId: string, tpaId: string, value: number) => {
     // Find the ticket info for this specific type

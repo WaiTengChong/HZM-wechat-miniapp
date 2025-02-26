@@ -61,7 +61,7 @@ export const I18n = new LocalizedStrings({
     submitSuccess: "提交成功",
     submitFailed: "提交失败",
     departureTime: "发车时间",
-    price: "价钱",
+    price: "总价钱",
     ticketType: "票种",
     ticketCost: "票价",
     // Order detail page translations
@@ -150,7 +150,7 @@ export const I18n = new LocalizedStrings({
     submitSuccess: "提交成功",
     submitFailed: "提交失敗",
     departureTime: "發車時間",
-    price: "價錢",
+    price: "總價錢",
     ticketType: "票種",
     ticketCost: "票價",
     // Order detail page translations
