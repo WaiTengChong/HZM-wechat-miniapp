@@ -6,6 +6,7 @@ import { ReservationResponse } from 'src/components/reservationsAPI';
 import { AtButton, AtCard, AtDivider, AtForm, AtInputNumber, AtList, AtListItem } from "taro-ui";
 import { createOrder, createReservation, getTickets, wxMakePay } from '../../api/api'; // Import the API method
 import { I18n } from '../../I18n';
+import { RemoteSettingsService } from '../../services/remoteSettings';
 import "./index.scss";
 interface State {
   ticket: Ticket;
@@ -16,6 +17,12 @@ interface State {
   departureDate: string;
   ticketQuantities: { [ticketId: string]: { [tpaId: string]: { passengers: string; passengerTels: string; ticketTypeId: string, ticketCategoryName: string, ticketCategoryLineId: string }[] } };
   addedTickets: Tpa[];
+  routeIdDiscountID: string[];
+  routeIdDiscountPrice: string[];
+  isDiscount: boolean;
+  firstPassenger: { passengers: string; passengerTels: string; ticketTypeId: string, ticketCategoryName: string, ticketCategoryLineId: string } | null;
+  firstTicketId: string;
+  firstTpaId: string;
 }
 
 export default class PassengerForm extends Component<{}, State> {
@@ -28,9 +35,15 @@ export default class PassengerForm extends Component<{}, State> {
     ticketQuantities: {}, // Initialize with an empty object
     ticket: {} as Ticket,
     addedTickets: [], // Initialize as empty array
+    routeIdDiscountID: [],
+    routeIdDiscountPrice: [],
+    isDiscount: false,
+    firstPassenger: null,
+    firstTicketId: '',
+    firstTpaId: '',
   };
 
-  componentDidMount() {
+  async componentDidMount() {
     const ticket = Taro.getStorageSync('ticket');
     const ticketDate = Taro.getStorageSync('ticket_date');
 
@@ -38,7 +51,34 @@ export default class PassengerForm extends Component<{}, State> {
       Taro.redirectTo({
         url: '/pages/index/index'
       });
+
+      Taro.showToast({
+        title: I18n.ticketNotFound,
+        icon: 'none',
+        duration: 2000
+      });
       return;
+    }
+
+    await RemoteSettingsService.getInstance().initialize();
+    const routeIdDiscount = RemoteSettingsService.getInstance().getList('routeId_discount', []);
+    const routeIdDiscountID = routeIdDiscount.map(item => item.split('/')[0]); // [341, 342]
+    const routeIdDiscountPrice = routeIdDiscount.map(item => item.split('/')[1]); // [0.9, 0.9]
+
+    this.setState({
+      routeIdDiscountID: routeIdDiscountID,
+      routeIdDiscountPrice: routeIdDiscountPrice,
+    });
+
+    const setDiscountPrice = routeIdDiscountID.includes(ticket.laRouteId);
+    if (setDiscountPrice) {
+      this.setState({
+        isDiscount: true,
+      });
+
+      ticket.tpa.forEach(tpa => {
+        tpa.fee = (parseFloat(tpa.fee) * parseFloat(routeIdDiscountPrice[routeIdDiscountID.indexOf(ticket.laRouteId)])).toFixed(0);
+      });
     }
 
     this.setState({
@@ -117,8 +157,9 @@ export default class PassengerForm extends Component<{}, State> {
       .replace(/\s+/g, '');
   };
 
-  handleInputChange = (index: number, ticketId: string, tpaId: string, field: 'name' | 'tel' | 'id', value: string) => {
+  handleInputChange = (field: 'name' | 'tel' | 'id', value: string) => {
     this.setState((prevState) => {
+      let firstPassenger: { passengers: string; passengerTels: string; ticketTypeId: string; ticketCategoryName: string; ticketCategoryLineId: string } | null = null;
       const updatedTicketQuantities = { ...prevState.ticketQuantities };
 
       // Apply the input value to all passengers across all tickets
@@ -128,29 +169,12 @@ export default class PassengerForm extends Component<{}, State> {
             ...passenger,
             [field === 'name' ? 'passengers' : field === 'tel' ? 'passengerTels' : 'passengerIds']: value
           }));
+
+          firstPassenger = updatedTicketQuantities[tId][tpId][0];
         });
       });
-
-      return { ticketQuantities: updatedTicketQuantities };
+      return { ticketQuantities: updatedTicketQuantities, firstPassenger: firstPassenger };
     });
-  };
-
-  handleDeletePassenger = (index: number) => {
-    const { ticketQuantities } = this.state;
-    const updatedTicketQuantities = { ...ticketQuantities };
-
-    for (const ticketId in updatedTicketQuantities) {
-      const tpaEntries = updatedTicketQuantities[ticketId];
-      for (const tpaId in tpaEntries) {
-        const passengers = tpaEntries[tpaId];
-        const updatedPassengers = passengers.filter((_, i) => i !== index);
-        const updatedTels = updatedPassengers.map(p => p.passengerTels);
-
-        updatedTicketQuantities[ticketId][tpaId] = updatedPassengers;
-      }
-    }
-
-    this.setState({ ticketQuantities: updatedTicketQuantities });
   };
 
   handleSubmit = async () => {
@@ -210,8 +234,8 @@ export default class PassengerForm extends Component<{}, State> {
       if (response.errorCode === "SUCCESS") {
         const wxCreateOrderResponseI = await createOrder(response.orderNo, response.orderDetailLst.routeName, response.orderDetailLst.ticketCode, response.orderDetailLst.lineBc, response.orderDetailLst.routeName, response.orderDetailLst.ticketTypeId);
         const wxPayResponse = await wxMakePay(wxCreateOrderResponseI.prepay_id);
-        if(wxPayResponse === "SUCCESS"){
-        // if (test) {
+        if (wxPayResponse === "SUCCESS") {
+          // if (test) {
           const getTicketsResponse: TicketResponse = await getTickets(response.orderNo, response.orderPrice, response.ticketNo);
           if (getTicketsResponse.errorCode === "SUCCESS") {
             // Safely handle orderList regardless of its current type
@@ -256,63 +280,75 @@ export default class PassengerForm extends Component<{}, State> {
   };
 
   handleQuantityChange = (ticketId: string, tpaId: string, value: number) => {
-    // Get the tickets for this specific type
-    console.log("Array.isArray(this.state.ticket?.tpa)", Array.isArray(this.state.ticket?.tpa));
-
-    const addedTickets = Array.isArray(this.state.ticket?.tpa)
-      ? this.state.ticket.tpa.filter(tpa => tpa.ticketTypeId === tpaId)
+    // Find the ticket info for this specific type
+    const ticketInfo = Array.isArray(this.state.ticket?.tpa)
+      ? this.state.ticket.tpa.find(tpa => tpa.ticketTypeId === tpaId)
       : this.state.ticket?.tpa && this.state.ticket.tpa.ticketTypeId === tpaId
-        ? [this.state.ticket.tpa]
-        : [];
+        ? this.state.ticket.tpa
+        : null;
+
+    if (!ticketInfo) return;
 
     this.setState((prevState) => {
-      // Remove existing tickets of this type
-      const existingTickets = prevState.addedTickets.filter(t => t.ticketTypeId !== tpaId);
-
-      // Add new tickets if value > 0
-      const updatedAddedTickets = value > 0
-        ? [...existingTickets, ...Array(value).fill(addedTickets[0])]
-        : existingTickets;
-
+      // Update just this specific ticket type's quantities
       const updatedTicketQuantities = {
         ...prevState.ticketQuantities,
         [ticketId]: {
-          ...prevState.ticketQuantities[ticketId],
+          ...prevState.ticketQuantities[ticketId] || {},
           [tpaId]: Array(value).fill({
-            passengers: '',
-            passengerTels: '',
-            passengerIds: '',
+            passengers: prevState.ticketQuantities[ticketId]?.[tpaId]?.[0]?.passengers || '',
+            passengerTels: prevState.ticketQuantities[ticketId]?.[tpaId]?.[0]?.passengerTels || '',
             ticketTypeId: tpaId,
-            ticketCategoryName: addedTickets[0]?.spareField4 || '',
+            ticketCategoryName: ticketInfo?.spareField4 || '',
+            ticketCategoryLineId: ticketInfo?.ticketCategoryLineId || '',
           }),
         },
       };
 
+      // Filter out existing tickets of this type
+      const filteredTickets = prevState.addedTickets.filter(t => t.ticketTypeId !== tpaId);
+
+      // Add the updated quantity of this ticket type
+      const updatedAddedTickets = value > 0
+        ? [...filteredTickets, ...Array(value).fill(ticketInfo)]
+        : filteredTickets;
+
+      // Determine the first ticket, tpa, and passenger after the update
+      let firstTicketId = '';
+      let firstTpaId = '';
+      let firstPassenger = null;
+
+      // Find the first non-empty ticket group
+      for (const tId in updatedTicketQuantities) {
+        const tpaEntries = updatedTicketQuantities[tId];
+        for (const tId in tpaEntries) {
+          if (tpaEntries[tId] && tpaEntries[tId].length > 0) {
+            firstTicketId = tId;
+            firstTpaId = tId;
+            firstPassenger = tpaEntries[tId][0];
+            break;
+          }
+        }
+        if (firstPassenger) break;
+      }
+
       return {
         addedTickets: updatedAddedTickets,
-        departureDestinationId: updatedAddedTickets[0]?.endStopId || '1',
-        departureOriginId: updatedAddedTickets[0]?.beginStopId || '1',
+        departureDestinationId: ticketInfo?.endStopId || prevState.departureDestinationId || '1',
+        departureOriginId: ticketInfo?.beginStopId || prevState.departureOriginId || '1',
         departureRunId: prevState.ticket?.runId || '',
-        ticketQuantities: updatedTicketQuantities
+        ticketQuantities: updatedTicketQuantities,
+        firstTicketId,
+        firstTpaId,
+        firstPassenger,
       };
     });
   };
-  // Add this method to handle state and ticket retrieval
-  private getPassengerData() {
-    const {
-      ticketQuantities,
-      ticket,
-    } = this.state;
-    return { ticketQuantities, ticket };
-  }
+
 
   render() {
-    const { ticketQuantities, ticket } = this.getPassengerData();
+    const { ticketQuantities, ticket, firstPassenger, firstTicketId, firstTpaId } = this.state;
 
-    // Get the first ticket and passenger for the form
-    const firstTicketId = Object.keys(ticketQuantities)[0];
-    const firstTpaId = firstTicketId ? Object.keys(ticketQuantities[firstTicketId])[0] : null;
-    const firstPassenger = firstTicketId && firstTpaId ? ticketQuantities[firstTicketId][firstTpaId][0] : null;
 
     return (
       <View className="container">
@@ -321,18 +357,30 @@ export default class PassengerForm extends Component<{}, State> {
           <AtCard
             key={ticket?.runId}
             title={ticket?.tpa ? (
-              `${Array.isArray(ticket.tpa) ? ticket.tpa[1]?.beginStopName || '' : ticket.tpa?.beginStopName || ''} → ${Array.isArray(ticket.tpa) ? ticket.tpa[1]?.endStopName || '' : ticket.tpa?.endStopName || ''}`
+              `${Array.isArray(ticket.tpa) ? ticket.tpa[1]?.beginStopName || '' : ticket.tpa?.beginStopName || ''} \n ↓ \n${Array.isArray(ticket.tpa) ? ticket.tpa[1]?.endStopName || '' : ticket.tpa?.endStopName || ''}`
             ) : I18n.loading}
           >
             <AtList>
               <AtListItem title={I18n.departureTime} extraText={ticket?.runStartTime} disabled={false} />
-              <AtListItem title={I18n.price} extraText={`$${this.state.addedTickets.reduce((total, tpa) => total + (parseFloat(tpa.fee) || 0), 0).toFixed(0)}`} disabled={false} />
+
+              {
+                this.state.isDiscount ? (
+                  <>
+                    <AtListItem className="original-price" title={I18n.price} extraText={`$${this.state.addedTickets.reduce((total, tpa) => total + (parseFloat(tpa.fee) / parseFloat(this.state.routeIdDiscountPrice[this.state.routeIdDiscountID.indexOf(ticket?.laRouteId)]) || 0), 0).toFixed(0)}`} disabled={false} />
+                    <AtListItem className="discount-display" title={`${this.state.routeIdDiscountPrice[this.state.routeIdDiscountID.indexOf(ticket?.laRouteId)].split('.')[1]}${I18n.discount}`} extraText={`${I18n.discountPrice} $${this.state.addedTickets.reduce((total, tpa) => total + (parseFloat(tpa.fee) || 0), 0).toFixed(0)}`} disabled={false} />
+                  </>
+                ) : <AtListItem title={I18n.price} extraText={`$${this.state.addedTickets.reduce((total, tpa) => total + (parseFloat(tpa.fee) || 0), 0).toFixed(0)}`} disabled={false} />
+              }
+
             </AtList>
             {Array.isArray(ticket?.tpa) ? (
               ticket.tpa.map((tpa) => (
                 <AtList key={tpa.ticketTypeId}>
                   <AtListItem
-                    title={`${tpa.ticketType}: $${tpa.fee}`}
+                    title={`${tpa.ticketType}: $${this.state.isDiscount ?
+                      (parseFloat(tpa.fee) / parseFloat(this.state.routeIdDiscountPrice[this.state.routeIdDiscountID.indexOf(ticket?.laRouteId)]) || 0).toFixed(0)
+                      :
+                      (parseFloat(tpa.fee) || 0).toFixed(0)}`}
                     extraText={""}
                     hasBorder={true}
                     iconInfo={{ size: 20, color: "dark-green", value: "money" }}
@@ -345,14 +393,7 @@ export default class PassengerForm extends Component<{}, State> {
                       size='large'
                       value={ticketQuantities[ticket?.runId]?.[tpa.ticketTypeId]?.length || 0}
                       onChange={(value) => {
-                        console.log("ticketQuantities[ticket?.runId]?.[tpa.ticketTypeId]", ticketQuantities[ticket?.runId]?.[tpa.ticketTypeId]);
                         this.handleQuantityChange(ticket?.runId, tpa.ticketTypeId, value);
-                        if (value < (ticketQuantities[ticket?.runId]?.[tpa.ticketTypeId]?.length || 0)) {
-                          const quantityDifference = (ticketQuantities[ticket?.runId]?.[tpa.ticketTypeId]?.length || 0) - value;
-                          for (let i = 0; i < quantityDifference; i++) {
-                            // Handle passenger removal logic here if needed
-                          }
-                        }
                       }}
                       type={'number'}
                     />
@@ -361,8 +402,12 @@ export default class PassengerForm extends Component<{}, State> {
               ))
             ) : (ticket?.tpa && !Array.isArray(ticket.tpa)) ? (
               <AtList key={ticket.tpa.ticketTypeId}>
+
                 <AtListItem
-                  title={`${ticket.tpa.ticketType}: $${ticket.tpa.fee}`}
+                  title={`${ticket.tpa.ticketType}: $${this.state.isDiscount ?
+                    (parseFloat(ticket.tpa.fee) / parseFloat(this.state.routeIdDiscountPrice[this.state.routeIdDiscountID.indexOf(ticket?.laRouteId)]) || 0).toFixed(0)
+                    :
+                    (parseFloat(ticket.tpa.fee) || 0).toFixed(0)}`}
                   extraText={""}
                   hasBorder={true}
                   iconInfo={{ size: 20, color: "dark-green", value: "money" }}
@@ -376,19 +421,7 @@ export default class PassengerForm extends Component<{}, State> {
                     value={ticketQuantities[ticket?.runId]?.[ticket.tpa.ticketTypeId]?.length || 0}
                     onChange={(value) => {
                       if (ticket?.tpa && !Array.isArray(ticket.tpa)) {  // Add type guard here
-                        console.log("ticketQuantities[ticket?.runId]?.[ticket.tpa.ticketTypeId]",
-                          ticketQuantities[ticket?.runId]?.[ticket.tpa.ticketTypeId]);
-
                         this.handleQuantityChange(ticket?.runId, ticket.tpa.ticketTypeId, value);
-
-                        if (value < (ticketQuantities[ticket?.runId]?.[ticket.tpa.ticketTypeId]?.length || 0)) {
-                          const quantityDifference = (
-                            ticketQuantities[ticket?.runId]?.[ticket.tpa.ticketTypeId]?.length || 0
-                          ) - value;
-                          for (let i = 0; i < quantityDifference; i++) {
-                            // Handle passenger removal logic here if needed
-                          }
-                        }
                       }
                     }}
                     type={'number'}
@@ -401,7 +434,7 @@ export default class PassengerForm extends Component<{}, State> {
           {firstPassenger && (
             <View className="form-container">
               <AtForm>
-                <AtDivider content={`${I18n.passengerInfo} ${firstPassenger.ticketCategoryName}`} />
+                <AtDivider content={`${I18n.passengerInfo}`} />
                 <Text className="title">{I18n.passengerName}</Text>
                 <View className='input-container'>
                   <Input
@@ -409,7 +442,7 @@ export default class PassengerForm extends Component<{}, State> {
                     type="text"
                     placeholder={I18n.enterPassengerName}
                     value={firstPassenger.passengers || ""}
-                    onInput={(e) => this.handleInputChange(0, firstTicketId, firstTpaId!, 'name', e.detail.value)}
+                    onInput={(e) => this.handleInputChange('name', e.detail.value)}
                   />
                 </View>
                 <Text className="title">{I18n.passengerPhone}</Text>
@@ -421,7 +454,7 @@ export default class PassengerForm extends Component<{}, State> {
                     value={firstPassenger.passengerTels || ""}
                     onInput={(e) => {
                       const numericValue = e.detail.value.replace(/[^0-9]/g, '');
-                      this.handleInputChange(0, firstTicketId, firstTpaId!, 'tel', numericValue);
+                      this.handleInputChange('tel', numericValue);
                     }}
                   />
                 </View>

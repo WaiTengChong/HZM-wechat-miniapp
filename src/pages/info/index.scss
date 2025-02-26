@@ -70,7 +70,7 @@
 .passenger-list{
     display: flex;
     flex-direction: column;
-    padding-bottom : 200px;
+    padding-bottom : 300px;
 }
 
 .passenger-item{
@@ -84,4 +84,42 @@
     margin-top: 20px;
     width: 100%;
     margin-bottom: 20px;
+}
+
+.discount-display{
+    font-size: 30px;
+    font-weight: bold;
+    color: red;
+
+    .item-extra__info{
+        color: red;
+    }
+}
+
+.at-card__header{
+    height: 140px;
+    overflow: inherit;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding-bottom: 10px;
+    padding-top: 10px;
+}
+
+.at-card__header-title{
+    overflow: visible;
+    white-space: normal;
+    width: 100%;
+    line-height: 1.4;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+}
+
+.original-price {
+    .item-extra__info {
+        text-decoration: line-through;
+        color: #999;
+    }
 }

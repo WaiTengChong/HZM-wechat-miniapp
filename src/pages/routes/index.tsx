@@ -17,7 +17,7 @@ export default class Routes extends Component<{}, State> {
     selectorChecked: '',
     selectorIndex: 0,
     selectedRouteId: '',
-    dateSel: dayjs().format('YYYY-MM-DD'),
+    dateSel: '',
     loading: true, // Set loading to true initially
     startLocation: '',
     endLocation: '',
@@ -59,6 +59,8 @@ export default class Routes extends Component<{}, State> {
           endAreaList: [...new Set(filteredRoutes.map(route => route.toCityCName))].filter(Boolean) as string[],
           loading: false,
         });
+
+        
       } else {
         console.error('Invalid response:', response.message);
         this.setState({ loading: false });
@@ -92,9 +94,18 @@ export default class Routes extends Component<{}, State> {
         date
       );
       if (response.run != undefined && response.run.length > 0) {
-        this.setState({
-          ticketData: response.run,
-        });
+        
+        //if the date is today, only show the ticket that is after the current time
+        if(date === dayjs().format('YYYY-MM-DD')){
+          this.setState({
+            ticketData: response.run.filter(ticket => dayjs(`${date} ${ticket.runStartTime}`).isAfter(dayjs().add(1, 'hour')))
+          });
+        }else{
+          this.setState({
+            ticketData: response.run,
+          });
+        }
+
         Taro.setStorageSync("ticket_date", this.state.dateSel);
       } else {
         this.setState({ ticketData: [] });
@@ -142,7 +153,7 @@ export default class Routes extends Component<{}, State> {
         selectedStartLocationAddress: response.locations.filter(lc => lc.on === "true")[0].address,
         selectedEndLocationAddress: response.locations.filter(lc => lc.on === "false")[0].address,
       });
-      await this.loadRouteTime(this.state.dateSel,true);
+      //await this.loadRouteTime(this.state.dateSel,true);
       this.setLoading(false);
     } catch (error) {
       this.setLoading(false);
@@ -387,7 +398,7 @@ export default class Routes extends Component<{}, State> {
 
               <View className='page-section'>
                 <Text className='section-title'>{I18n.date}</Text>
-                <AtCalendar minDate={dayjs().format('YYYY-MM-DD')} maxDate={dayjs().add(1, 'month').format('YYYY-MM-DD')} onDayClick={this.onDateChange} />
+                <AtCalendar currentDate={''} minDate={dayjs().format('YYYY-MM-DD')} maxDate={dayjs().add(1, 'month').format('YYYY-MM-DD')} onDayClick={this.onDateChange} />
               </View>
 
               <Text className='section-title'>{I18n.selectSchedule}</Text>
@@ -402,10 +413,8 @@ export default class Routes extends Component<{}, State> {
                 <Picker
                   mode='selector'
                   range={ticketData?.filter(ticket => {
-                    const isToday = dayjs(dateSel).isSame(dayjs(), "day");
-                    return isToday ? 
-                      dayjs(`${dateSel} ${ticket.runStartTime}`).isAfter(dayjs().add(1, 'hour')) :
-                      true;
+                    const ticketDateTime = dayjs(`${dateSel} ${ticket.runStartTime}`);
+                    return ticketDateTime.isAfter(dayjs().add(1, 'hour'));
                   }).map(ticket => ticket.runStartTime)}
                   onChange={this.onTicketChange}
                   value={selectedTicketIndex}
