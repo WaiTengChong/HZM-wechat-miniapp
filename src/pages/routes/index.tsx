@@ -431,18 +431,26 @@ export default class Routes extends Component<{}, State> {
                 </Picker>
               )}
 
-              <AtDivider content={I18n.ticketNotice} />
+              <AtDivider content={I18n.luggagePolicy} />
 
               <View className='page-info'>
-                <AtList>{I18n.ticketNotice1}</AtList>
-                <AtList>{I18n.ticketNotice2}</AtList>
-                <AtList>{I18n.ticketNotice3}</AtList>
-                <AtList>{I18n.ticketNotice4}</AtList>
-                <AtList>{I18n.ticketNotice5}</AtList>
-                <AtList>{I18n.ticketNotice6}</AtList>
-                <AtList>{I18n.ticketNotice7}</AtList>
-                <AtList>{I18n.ticketNotice8}</AtList>
-                <AtList>{I18n.ticketNotice9}</AtList>
+                <AtList hasBorder={false}>{I18n.luggageWelcome}</AtList>
+                <AtList hasBorder={false}>{I18n.luggagePolicy1}</AtList>
+                <AtList hasBorder={false}>{I18n.luggagePolicy2}</AtList>
+                <AtList hasBorder={false}>{I18n.luggagePolicy3}</AtList>
+                <AtList hasBorder={false}>{I18n.luggagePolicy4}</AtList>
+                <AtList hasBorder={false}>{I18n.luggagePolicy5}</AtList>
+                <AtList hasBorder={false}>{I18n.luggagePolicy6}</AtList>
+                <AtList hasBorder={false} className='luggage-padding'>{I18n.luggageSizeA}</AtList>
+                <AtList hasBorder={false} className='luggage-padding'>{I18n.luggageSizeB}</AtList>
+                <AtList hasBorder={false} className='luggage-padding'>{I18n.luggageSizeC}</AtList>
+                <AtList hasBorder={false}>{I18n.luggagePolicy7}</AtList>
+                <AtList hasBorder={false} className='luggage-padding'>{I18n.luggageIdentity}</AtList>
+                <AtList hasBorder={false} className='luggage-padding'>{I18n.luggageCheckTime}</AtList>
+                <AtList hasBorder={false}>{I18n.luggagePolicy8}</AtList>
+                <AtList hasBorder={false}>{I18n.luggagePolicy9}</AtList>
+                <AtList hasBorder={false}>{I18n.luggagePolicy10}</AtList>
+                <AtList hasBorder={false}>{I18n.luggagePolicy11}</AtList>
               </View>
 
               <View className='confirm-button'>

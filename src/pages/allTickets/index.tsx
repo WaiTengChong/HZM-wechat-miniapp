@@ -214,10 +214,29 @@ export default class TicketListPage extends Component<{}, State> {
 
                                                 {this.renderQRCode(detail.ticketCode)}
 
-                                                <View className='ticket-footer'>
-                                                    <Text className='notice-text'>{I18n.ticketNotice1}</Text>
-                                                    <Text className='notice-text-en'>Please read "NOTICE TO PASSENGERS AND TERMS" on the back of tickets.</Text>
-                                                </View>
+                                                    <View className='ticket-footer'>
+                                                        <AtDivider content={I18n.luggagePolicy} />
+
+                                                        <View className='page-info'>
+                                                            <AtList hasBorder={false}>{I18n.luggageWelcome}</AtList>
+                                                            <AtList hasBorder={false}>{I18n.luggagePolicy1}</AtList>
+                                                            <AtList hasBorder={false}>{I18n.luggagePolicy2}</AtList>
+                                                            <AtList hasBorder={false}>{I18n.luggagePolicy3}</AtList>
+                                                            <AtList hasBorder={false}>{I18n.luggagePolicy4}</AtList>
+                                                            <AtList hasBorder={false}>{I18n.luggagePolicy5}</AtList>
+                                                            <AtList hasBorder={false}>{I18n.luggagePolicy6}</AtList>
+                                                            <AtList hasBorder={false} className='luggage-padding'>{I18n.luggageSizeA}</AtList>
+                                                            <AtList hasBorder={false} className='luggage-padding'>{I18n.luggageSizeB}</AtList>
+                                                            <AtList hasBorder={false} className='luggage-padding'>{I18n.luggageSizeC}</AtList>
+                                                            <AtList hasBorder={false}>{I18n.luggagePolicy7}</AtList>
+                                                            <AtList hasBorder={false} className='luggage-padding'>{I18n.luggageIdentity}</AtList>
+                                                            <AtList hasBorder={false} className='luggage-padding'>{I18n.luggageCheckTime}</AtList>
+                                                            <AtList hasBorder={false}>{I18n.luggagePolicy8}</AtList>
+                                                            <AtList hasBorder={false}>{I18n.luggagePolicy9}</AtList>
+                                                            <AtList hasBorder={false}>{I18n.luggagePolicy10}</AtList>
+                                                            <AtList hasBorder={false}>{I18n.luggagePolicy11}</AtList>
+                                                        </View>
+                                                    </View>
                                             </AtCard>
                                         )) : this.isSingleOrderDetail(order.orderDetailLst) && (
                                             <AtCard
@@ -252,8 +271,27 @@ export default class TicketListPage extends Component<{}, State> {
                                                 {this.renderQRCode(order.orderDetailLst.ticketCode)}
 
                                                 <View className='ticket-footer'>
-                                                    <Text className='notice-text'>{I18n.ticketNotice1}</Text>
-                                                    <Text className='notice-text-en'>Please read "NOTICE TO PASSENGERS AND TERMS" on the back of tickets.</Text>
+                                                        <AtDivider content={I18n.luggagePolicy} />
+
+                                                        <View className='page-info'>
+                                                            <AtList hasBorder={false}>{I18n.luggageWelcome}</AtList>
+                                                            <AtList hasBorder={false}>{I18n.luggagePolicy1}</AtList>
+                                                            <AtList hasBorder={false}>{I18n.luggagePolicy2}</AtList>
+                                                            <AtList hasBorder={false}>{I18n.luggagePolicy3}</AtList>
+                                                            <AtList hasBorder={false}>{I18n.luggagePolicy4}</AtList>
+                                                            <AtList hasBorder={false}>{I18n.luggagePolicy5}</AtList>
+                                                            <AtList hasBorder={false}>{I18n.luggagePolicy6}</AtList>
+                                                            <AtList hasBorder={false} className='luggage-padding'>{I18n.luggageSizeA}</AtList>
+                                                            <AtList hasBorder={false} className='luggage-padding'>{I18n.luggageSizeB}</AtList>
+                                                            <AtList hasBorder={false} className='luggage-padding'>{I18n.luggageSizeC}</AtList>
+                                                            <AtList hasBorder={false}>{I18n.luggagePolicy7}</AtList>
+                                                            <AtList hasBorder={false} className='luggage-padding'>{I18n.luggageIdentity}</AtList>
+                                                            <AtList hasBorder={false} className='luggage-padding'>{I18n.luggageCheckTime}</AtList>
+                                                            <AtList hasBorder={false}>{I18n.luggagePolicy8}</AtList>
+                                                            <AtList hasBorder={false}>{I18n.luggagePolicy9}</AtList>
+                                                            <AtList hasBorder={false}>{I18n.luggagePolicy10}</AtList>
+                                                            <AtList hasBorder={false}>{I18n.luggagePolicy11}</AtList>
+                                                        </View>
                                                 </View>
                                             </AtCard>
                                         )

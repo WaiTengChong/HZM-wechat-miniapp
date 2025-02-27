@@ -18,9 +18,9 @@ export default defineAppConfig({
   window: {
     backgroundTextStyle: "light",
     navigationBarBackgroundColor: "#fff",
-    navigationBarTitleText: "港珠澳汽車快線",
+    navigationBarTitleText: "HZM港珠澳汽車快線",
     navigationBarTextStyle: "black",
-    backgroundColor: "#ffffff"
+    backgroundColor: "#ffffff",
   },
   networkTimeout: {
     request: 220000,

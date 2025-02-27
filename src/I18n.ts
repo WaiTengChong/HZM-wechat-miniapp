@@ -28,27 +28,12 @@ export const I18n = new LocalizedStrings({
     place: "地点",
     address: "位置",
     date: "日期",
-    selectSchedule: "选择班次",
+    selectSchedule: "选择车票",
     scheduleTime: "班次时间",
     loadingEllipsis: "加载中...",
     pleaseSelect: "请选择",
-    pleaseSelectNewDate: "请重新选择日期",
-    ticketNotice: "订票需知",
+    pleaseSelectNewDate: "请选择日期",
     submit: "提交",
-    // Ticket notice items
-    ticketNotice1:
-      "所有车票只限票面上注明之日期及班次有效，乘客必须依照选定的日期及上车地点登车，过期无效。",
-    ticketNotice2:
-      "乘客必须按车票上注明之班次于开车前15分钟到达上车点候车，逾时不候，亦不获退票。",
-    ticketNotice3: "儿童车票只适合3-5岁小童使用。",
-    ticketNotice4:
-      "如需办理预办登机手续，平日请于航班起飞前3小时到达本公司票务中心办理手续；而节日或周末前夕请于航班起飞前4小时到达本公司票务中心办理手续。",
-    ticketNotice5:
-      "香港市区与深圳宝安机场间之车程约为2小时「不包括特殊路面交通情况及过关等候时间」。",
-    ticketNotice6: "乘客如因过关延误，可转乘本司下一班车前往目的地。",
-    ticketNotice7: "付款方式: Wechat Pay。",
-    ticketNotice8: "更改订单: 所有订单均不设任何取消及更改。",
-    ticketNotice9: "退款及退货: 所有订单均不设退款及退货。",
     pleaseSelectTicket: "请选择一张车票",
     // Passenger form translations
     passengerInfo: "乘客资料",
@@ -90,6 +75,36 @@ export const I18n = new LocalizedStrings({
     ticketNotFound: "未找到车票信息",
     discount: "折",
     discountPrice: "折后价",
+    // Luggage policy translations,
+    luggagePolicy: "豪华轿车注意事项",
+    luggageWelcome:
+      "乘客您好！欢迎您乘坐我司豪华轿车，请您在乘车前认真阅读以下注意事项：",
+    luggagePolicy1: "1. 豪  华轿车服务，所有乘客均须购票，统一收费。",
+    luggagePolicy2:
+      "2. 您乘坐的香港往返澳门班次，中途需要换车，换车时需时间约为2分钟左右。",
+    luggagePolicy3: "3. 您乘坐的豪华轿车为七座车型，每台座最多可容纳六位乘客。",
+    luggagePolicy4:
+      "4. 您需自备合法有效的通关证件，如因证件问题导致无法通关或行程延误，为不影响其他乘客，我司有权拒载，且无法办理退票。",
+    luggagePolicy5: "5. 车厢序号不代表乘车座位号，请您听从工作人员安排就坐。",
+    luggagePolicy6: "6. 您可免费携带一件大件行李和一件手提行李。",
+    luggageSizeA:
+      "a.大件行李重量最大限額为10公斤，体积最大限額为55厘米x45厘米x20厘米(即22英吋x18英吋x8英吋)",
+    luggageSizeB:
+      "b.手提行李體積最大限額為37.5厘米x25厘米x15厘米(即15英吋x10英吋x6英吋)",
+    luggageSizeC:
+      "c.如行李超出上述体积或重量，工作人员有权拒绝或要求乘客，且无法办理退票。",
+    luggagePolicy7: "7. 如果您符合以下身份，可享受澳门口岸免下车通关",
+    luggageIdentity:
+      "a.澳门特别行政区居民、持中国往来港澳通行证人士、持香港永久性居民身份證人士、上述三类以外且未满十八岁的未成年人士（仅限没有成年乘客陪同的情况） *非以上类型人员需要下车通关，车辆只会等候旅客15分钟通关",
+    luggageCheckTime:
+      "b.非以上类型人员需要下车通关，车辆只会等候旅客15分钟通关。",
+    luggagePolicy8: "8. 如果您在澳门口岸下车通关，请您在通关后于B2区域上车。",
+    luggagePolicy9:
+      "9. 旅客须于所选班次，最少于发车前15分钟，凭购票手机短讯到售票处换取车票",
+    luggagePolicy10:
+      "10. 购票确定后一律不退不改，所有车票当天当班有效，逾时无效。",
+    luggagePolicy11:
+      "11. 如因非人力可控情况（如台风、恶劣天气或水浸等等）班次取消，客人可于7天内免费退改车票。",
   },
   hk: {
     login: "登入",
@@ -117,27 +132,12 @@ export const I18n = new LocalizedStrings({
     place: "地點",
     address: "位置",
     date: "日期",
-    selectSchedule: "選擇班次",
-    scheduleTime: "班次時間",
+    selectSchedule: "選擇車票",
+    scheduleTime: "車票時間",
     loadingEllipsis: "加載中...",
     pleaseSelect: "請選擇",
-    pleaseSelectNewDate: "請重新選擇日期",
-    ticketNotice: "訂票需知",
+    pleaseSelectNewDate: "請選擇日期",
     submit: "提交",
-    // Ticket notice items
-    ticketNotice1:
-      "所有車票只限票面上註明之日期及班次有效，乘客必須依照選定的日期及上車地點登車，過期無效。",
-    ticketNotice2:
-      "乘客必須按車票上註明之班次於開車前15分鐘到達上車點候車，逾時不候，亦不獲退票。",
-    ticketNotice3: "兒童車票只適合3-5歲小童使用。",
-    ticketNotice4:
-      "如需辦理預辦登機手續，平日請於航班起飛前3小時到達本公司票務中心辦理手續；而節日或週末前夕請於航班起飛前4小時到達本公司票務中心辦理手續。",
-    ticketNotice5:
-      "香港市區與深圳寶安機場間之車程約為2小時「不包括特殊路面交通情況及過關等候時間」。",
-    ticketNotice6: "乘客如因過關延誤，可轉乘本司下一班車前往目的地。",
-    ticketNotice7: "付款方式: Wechat Pay。",
-    ticketNotice8: "更改訂單: 所有訂單均不設任何取消及更改。",
-    ticketNotice9: "退款及退貨: 所有訂單均不設退款及退貨。",
     pleaseSelectTicket: "請選擇一張車票",
     // Passenger form translations
     passengerInfo: "乘客資料",
@@ -176,9 +176,39 @@ export const I18n = new LocalizedStrings({
     serviceHours: "工作時間：週一至週五 9:00-18:00",
     customerServiceConnectSuccess: "成功開啟客服會話",
     customerServiceConnectFail: "開啟客服會話失敗",
-    ticketNotFound: "未找到車票信息", 
+    ticketNotFound: "未找到車票信息",
     discountPrice: "折後價",
     discount: "折",
+    // Luggage policy translations
+    luggagePolicy: "豪華轎車注意事項",
+    luggageWelcome:
+      "乘客您好！歡迎您乘坐我司豪華轎車，請您在乘車前認真閱讀以下注意事項：",
+    luggagePolicy1: "1. 豪華轎車服務，所有乘客均須購票，統一收費。",
+    luggagePolicy2:
+      "2. 您乘坐的香港往返澳門班次，中途需要換車，換車時需時間約為2分鐘左右。",
+    luggagePolicy3: "3. 您乘坐的豪華轎車為七座車型，每台座最多可容納六位乘客。",
+    luggagePolicy4:
+      "4. 您需自備合法有效的通關證件，如因證件問題導致無法通關或行程延誤，為不影響其他乘客，我司有權拒載，且無法辦理退票。",
+    luggagePolicy5: "5. 車票序號不代表乘車座位號，請您聽從工作人員安排就坐。",
+    luggagePolicy6: "6. 您可免費攜帶一件大件行李和一件手提行李。",
+    luggageSizeA:
+      " a.大件行李重量最大限額為10公斤，體積最大限額為55厘米x45厘米x20量米(即22英吋x18英吋x8英吋)",
+    luggageSizeB:
+      " b.手提行李體積最大限額為37.5厘米x25厘米x15量米(即15英吋x10英吋x6英吋)",
+    luggageSizeC:
+      " c.如行李超出上述體積或重量，工作人員有權拒絕或要求乘客，且無法辦理退票。",
+    luggagePolicy7: "7. 如果您符合以下身份，可享受澳門口岸免下車過關",
+    luggageIdentity:
+      " a.澳門特別行政區居民、持中國往來港澳通行證人士、持香港永久性居民身份證人士、上述三類以外且未滿十八歲的未成年人士（僅限沒有成年乘客陪同的情況下） *非以上類型人員需要下車過關，車輛只會等候旅客15分鐘過關",
+    luggageCheckTime:
+      " b.非以上類型人員需要下車過關，車輛只會等候旅客15分鐘過關。",
+    luggagePolicy8: "8. 如果您在澳門口岸下車過關，請您在過關後於B2區域上車。",
+    luggagePolicy9:
+      "9.旅客須於所選班次，最少於發車前15分鐘，憑購票手機短訊到售票處換取車票",
+    luggagePolicy10:
+      "10. 購票確定後一律不退不改，所有車票當天當班有效，逾時無效。",
+    luggagePolicy11:
+      "11. 如因非人力可控情況（如颱風、惡劣天氣或水浸等等）班次取消，客人可於7天內免費退改車票。",
   },
 });
 

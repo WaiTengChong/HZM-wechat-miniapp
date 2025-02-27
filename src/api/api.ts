@@ -64,6 +64,9 @@ const makeAPICall = async (
       }).then(() => {
         Taro.navigateTo({
           url: "/pages/index/index",
+          success: () => {
+            Taro.clearStorageSync();
+          }
         });
       });
       return Promise.reject(response.data.message);

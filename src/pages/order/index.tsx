@@ -132,7 +132,7 @@ export default class OrderDetail extends React.Component<{}, OrderDetailState> {
               <AtListItem title={I18n.departureDate} hasBorder={false} extraText={ticket.runDate} />
               <AtListItem title={I18n.departureTime} hasBorder={false} extraText={ticket.runTime} />
             </View>
-            <AtButton
+            {/* <AtButton
               type="secondary"
               className="cancel-button"
               onClick={() => this.handleGetTicketInfo(ticket.ticketNo)}
@@ -145,7 +145,7 @@ export default class OrderDetail extends React.Component<{}, OrderDetailState> {
               onClick={() => this.handleOrderInfo(ticket.orderNo)}
             >
               {I18n.viewOrder}
-            </AtButton>
+            </AtButton> */}
           </AtCard>
         ))}
         <AtButton

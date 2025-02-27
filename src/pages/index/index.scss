@@ -186,11 +186,18 @@
   justify-content: center;
   align-items: center;
   width: 100%;
+  flex-direction: column;
 }
 
 .logout-text{
   color: rgb(238, 105, 105);
   font-size: 30px;
+}
+
+.version-text{
+  padding-top: 80px;
+  color: #999;
+  font-size: 20px;
 }
 
 .language-switch {

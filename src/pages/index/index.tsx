@@ -41,7 +41,12 @@ export default class Index extends Component<PropsWithChildren, State> {
   componentDidShow() {
   }
 
-  componentDidHide() { }
+  onShareAppMessage() {
+    return {
+      title: 'HZM港珠澳汽車快線',
+      path: '/pages/index/index'
+    }
+  }
 
   getBanner = () => {
     const banner =  RemoteSettingsService.getInstance().getList("home_banner", []);
@@ -103,15 +108,15 @@ export default class Index extends Component<PropsWithChildren, State> {
     const OPEN_ID = Taro.getStorageSync("OPEN_ID");
     if (!AUTH_TICKET || !OPEN_ID) {
       this.handleLogout();
+    }else{
+      this.setState({
+        loginStatus: true
+      })
     }
 
     //检测sessionkey
     Taro.checkSession({
       success: () => {
-        this.setState({
-          loginStatus: true
-        })
-
         Taro.getUserInfo({
           success: (res) => {
             this.setState({
@@ -239,6 +244,9 @@ export default class Index extends Component<PropsWithChildren, State> {
                   onClick={this.handleLogout}
                 >
                   {I18n.logout}
+                </Text>
+                <Text className='version-text'>
+                  0.1.2
                 </Text>
               </View>
             )}
