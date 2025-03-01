@@ -445,7 +445,6 @@ export default class Routes extends Component<{}, State> {
                 <AtList hasBorder={false} className='luggage-padding'>{I18n.luggageSizeB}</AtList>
                 <AtList hasBorder={false} className='luggage-padding'>{I18n.luggageSizeC}</AtList>
                 <AtList hasBorder={false}>{I18n.luggagePolicy7}</AtList>
-                <AtList hasBorder={false} className='luggage-padding'>{I18n.luggageIdentity}</AtList>
                 <AtList hasBorder={false} className='luggage-padding'>{I18n.luggageCheckTime}</AtList>
                 <AtList hasBorder={false}>{I18n.luggagePolicy8}</AtList>
                 <AtList hasBorder={false}>{I18n.luggagePolicy9}</AtList>
