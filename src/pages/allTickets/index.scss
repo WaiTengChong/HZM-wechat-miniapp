@@ -7,23 +7,21 @@
 @import "~taro-ui/dist/style/components/icon.scss";
 @import "~taro-ui/dist/style/components/input.scss";
 
-.body{
+.body {
   background-color: #f8f8f8;
 }
-
 
 .container {
   padding: 16px;
   background-color: rgb(255, 255, 255);
-  margin:20px;
-  
+
   .at-accordion {
     margin-bottom: 16px;
-    
+
     .at-list {
       .at-card {
         margin-bottom: 16px;
-        
+        margin:0;
         &:last-child {
           margin-bottom: 0;
         }
@@ -36,7 +34,7 @@
   display: flex;
   justify-content: center;
   padding: 16px 0;
-  
+
   .qr-code {
     width: 200px;
     height: 200px;
@@ -89,7 +87,7 @@
     align-items: center;
     flex-direction: row;
 
-    .service-hotline-container{
+    .service-hotline-container {
       display: flex;
       flex-direction: column;
       align-items: flex-start;
@@ -119,7 +117,7 @@
     margin: 15px 0;
   }
 
-  .run-time{
+  .run-time {
     font-size: 32px;
     color: #333;
     padding-bottom: 20px;
@@ -131,24 +129,25 @@
     display: flex;
     justify-content: space-between;
     flex-direction: column;
-    
+
     .route-text {
       font-size: min(40px, 5vw);
       font-weight: bold;
       padding-bottom: 30px;
+      padding-top: 30px;
       width: 100%;
       text-align: center;
       line-height: 1.2;
     }
 
     .on-board-text {
-      font-size: 22px;
+      font-size: 28px;
       color: #333;
       padding-bottom: 20px;
     }
 
     .off-board-text {
-      font-size: 22px;
+      font-size: 28px;
       color: #333;
       padding-bottom: 20px;
     }
@@ -168,14 +167,14 @@
 
   .qr-section {
     margin: 20px 0;
-    
+
     .qr-code {
       width: 300px;
       height: 300px;
     }
   }
-  
-  .qr-code-text{
+
+  .qr-code-text {
     font-size: 20px;
     color: black;
     display: flex;
@@ -206,15 +205,18 @@
 }
 
 .accordion {
-  background-color: rgb(242, 241, 241);
+  background-color: white;
+  border: 1px solid gainsboro;
+  .at-accordion__info__title {
+  }
 }
 
 .loading-container {
-    padding: 20px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    min-height: 100px;
+  padding: 20px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100px;
 }
 
 .page-info {
@@ -222,6 +224,6 @@
   text-align: left;
 }
 
-.luggage-padding{
+.luggage-padding {
   padding-left: 20px;
 }

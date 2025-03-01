@@ -1,4 +1,4 @@
-import { Input, Text, View } from '@tarojs/components';
+import { Input, Picker, Text, View } from '@tarojs/components';
 import Taro from "@tarojs/taro";
 import { Component } from 'react';
 import { TicketResponse } from 'src/components/getTicketsAPI';
@@ -25,6 +25,7 @@ interface State {
   isDiscount: boolean;
   selectedStartLocationAddress: string;
   selectedEndLocationAddress: string;
+  countryCode: string;
 }
 
 export default class PassengerForm extends Component<{}, State> {
@@ -34,7 +35,7 @@ export default class PassengerForm extends Component<{}, State> {
     departureDestinationId: "",
     departureRunId: "",
     departureDate: "",
-    ticketQuantities: {}, // Initialize with an empty object
+    ticketQuantities: {},
     ticket: {} as Ticket,
     addedTickets: [],
     routeIdDiscountID: [],
@@ -45,6 +46,7 @@ export default class PassengerForm extends Component<{}, State> {
     firstTpaId: '',
     selectedStartLocationAddress: '',
     selectedEndLocationAddress: '',
+    countryCode: '86',
   };
 
   async componentDidMount() {
@@ -161,7 +163,7 @@ export default class PassengerForm extends Component<{}, State> {
   };
   // Function to format passengers and their telephone numbers
   formatPassengerTel = () => {
-    const { ticketQuantities } = this.state;
+    const { ticketQuantities, countryCode } = this.state;
     const result: string[] = [];
 
     for (const ticketId in ticketQuantities) {
@@ -171,7 +173,7 @@ export default class PassengerForm extends Component<{}, State> {
       for (const tpaId in tpaEntries) {
         const passengers = tpaEntries[tpaId];
         const passengerNames = passengers.map(p => p.passengers).join(",");
-        const passengerTels = passengers.map(p => p.passengerTels).join(",");
+        const passengerTels = passengers.map(p => countryCode + p.passengerTels).join(",");
 
         tpaResults.push(`${passengerNames}(${passengerTels})`);
       }
@@ -183,7 +185,7 @@ export default class PassengerForm extends Component<{}, State> {
   };
 
   getPassengerTel = () => {
-    const { ticketQuantities } = this.state;
+    const { ticketQuantities, countryCode } = this.state;
     const telsByTicketType: { [ticketTypeId: string]: string[] } = {};
 
     // Group phone numbers by ticket type
@@ -191,14 +193,14 @@ export default class PassengerForm extends Component<{}, State> {
       const tpaEntries = ticketQuantities[ticketId];
       for (const tpaId in tpaEntries) {
         const passengers = tpaEntries[tpaId];
-        const passengerTels = passengers.map(p => p.passengerTels);
+        const passengerTels = passengers.map(p => countryCode + p.passengerTels);
 
         // Initialize array for this ticket type if not exists
         if (!telsByTicketType[passengers[0].ticketTypeId]) {
           telsByTicketType[passengers[0].ticketTypeId] = [];
         }
 
-        // Add phone numbers to the appropriate ticket type group
+        // Add phone numbers with country code to the appropriate ticket type group
         telsByTicketType[passengers[0].ticketTypeId].push(...passengerTels);
       }
     }
@@ -228,6 +230,10 @@ export default class PassengerForm extends Component<{}, State> {
       });
       return { ticketQuantities: updatedTicketQuantities, firstPassenger: firstPassenger };
     });
+  };
+
+  handleCountryCodeChange = (value: string) => {
+    this.setState({ countryCode: value });
   };
 
   handleSubmit = async () => {
@@ -339,7 +345,7 @@ export default class PassengerForm extends Component<{}, State> {
 
 
   render() {
-    const { ticketQuantities, ticket, firstPassenger, addedTickets, routeIdDiscountPrice, routeIdDiscountID, isDiscount, firstTicketId, firstTpaId } = this.state;
+    const { ticketQuantities, ticket, firstPassenger, addedTickets, routeIdDiscountPrice, routeIdDiscountID, isDiscount, firstTicketId, firstTpaId, countryCode } = this.state;
 
 
     return (
@@ -401,8 +407,25 @@ export default class PassengerForm extends Component<{}, State> {
                   />
                 </View>
                 <Text className="title">{I18n.passengerPhone}</Text>
-                <View className='input-container'>
+                <View className='input-container phone-input-container'>
+                  <View className='country-code-picker'>
+                    <Picker
+                      mode='selector'
+                      range={['+86', '+852', '+853']}
+                      onChange={(e) => {
+                        // Extract just the numeric part from the selected value
+                        const selectedValue = ['86', '852', '853'][e.detail.value];
+                        this.handleCountryCodeChange(selectedValue);
+                      }}
+                      value={['86', '852', '853'].indexOf(countryCode)}
+                    >
+                      <View className='country-code'>
+                        +{countryCode}
+                      </View>
+                    </Picker>
+                  </View>
                   <Input
+                    className='phone-input'
                     name="passengerTel"
                     type="number"
                     placeholder={I18n.enterPassengerPhone}

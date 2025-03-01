@@ -201,6 +201,7 @@ export default class TicketListPage extends Component<{}, State> {
                                                 </View>
 
                                                 <View className='ticket-route'>
+                                                    <Text className='run-time'>{I18n.departureDate}：{detail.runDate}</Text>
                                                     <Text className='run-time'>{I18n.departureTime}：{detail.runTime}</Text>
                                                     <Text className='route-text'>{detail.depatureOriginName} → {detail.depatureDestinatName}</Text>
                                                     <Text className='on-board-text'><Text style={{fontWeight: 'bold'}}>{I18n.departure}：</Text>{'\n'}{detail.onAddress}</Text>
@@ -209,7 +210,6 @@ export default class TicketListPage extends Component<{}, State> {
 
                                                 <View className='ticket-info'>
                                                     <Text>{I18n.ticketNumber}：{detail.ticketCode}</Text>
-                                                    <Text>{I18n.departureDate}：{detail.runDate}</Text>
                                                 </View>
 
                                                 {this.renderQRCode(detail.ticketCode)}
@@ -257,6 +257,7 @@ export default class TicketListPage extends Component<{}, State> {
 
                                                 <View className='ticket-route'>
                                                     <Text className='run-time'>{I18n.departureTime}：{order.orderDetailLst.runTime}</Text>
+                                                    <Text className='run-time'>{I18n.departureDate}：{order.orderDetailLst.runDate}</Text>
                                                     <Text className='route-text'>{order.orderDetailLst.depatureOriginName} → {order.orderDetailLst.depatureDestinatName}</Text>
                                                     <Text className='on-board-text'><Text style={{fontWeight: 'bold'}}>{I18n.departure}：</Text>{'\n'}{order.orderDetailLst.onAddress}</Text>
                                                     <Text className='off-board-text'><Text style={{fontWeight: 'bold'}}>{I18n.destination}：</Text>{'\n'}{order.orderDetailLst.offAddress}</Text>
@@ -264,7 +265,6 @@ export default class TicketListPage extends Component<{}, State> {
 
                                                 <View className='ticket-info'>
                                                     <Text>{I18n.ticketNumber}：{order.orderDetailLst.ticketCode}</Text>
-                                                    <Text>{I18n.departureDate}：{order.orderDetailLst.runDate}</Text>
                                                 </View>
 
                                                 {this.renderQRCode(order.orderDetailLst.ticketCode)}

@@ -128,3 +128,29 @@
     width: 100%;
   }
 }
+
+.phone-input-container {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+}
+
+.country-code-picker {
+  min-width: 20%;
+  height: 100%;
+  margin-right: 10px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.country-code {
+  text-align: center;
+  font-size: 30px;
+}
+
+.phone-input {
+  flex: 1;
+}

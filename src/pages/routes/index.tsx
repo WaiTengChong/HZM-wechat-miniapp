@@ -627,7 +627,7 @@ export default class Routes extends Component<{}, State> {
                                 title={`${tpa.ticketType}: $${price}`}
                                 extraText={
                                   <AtInputNumber
-                                    min={0} max={10} step={1} size='normal' type='number'
+                                    min={0} step={1} size='normal' type='number'
                                     value={ticketQuantities[selectedTicket?.runId]?.[tpa.ticketTypeId]?.length || 0}
                                     onChange={(value) => this.handleQuantityChange(
                                       selectedTicket?.runId,
@@ -641,8 +641,8 @@ export default class Routes extends Component<{}, State> {
                                 iconInfo={{ size: 20, color: "dark-green", value: "money" }}
                               />
                             </AtList>
-                          );
-                        });
+                          )
+                        })
                       })()}
                     </>
                   )}
