@@ -3,7 +3,7 @@ import Taro from "@tarojs/taro";
 import { Component } from 'react';
 import { TicketResponse } from 'src/components/getTicketsAPI';
 import { ReservationResponse } from 'src/components/reservationsAPI';
-import { AtButton, AtCard, AtDivider, AtForm, AtInputNumber, AtList, AtListItem } from "taro-ui";
+import { AtButton, AtCard, AtDivider, AtForm, AtList, AtListItem } from "taro-ui";
 import { createOrder, createReservation, getTickets, wxMakePay } from '../../api/api'; // Import the API method
 import { I18n } from '../../I18n';
 import { RemoteSettingsService } from '../../services/remoteSettings';
@@ -16,13 +16,15 @@ interface State {
   departureRunId: string;
   departureDate: string;
   ticketQuantities: { [ticketId: string]: { [tpaId: string]: { passengers: string; passengerTels: string; ticketTypeId: string, ticketCategoryName: string, ticketCategoryLineId: string }[] } };
+  firstPassenger: { passengers: string; passengerTels: string; ticketTypeId: string, ticketCategoryName: string, ticketCategoryLineId: string } | null;
+  firstTicketId: string;
+  firstTpaId: string;
   addedTickets: Tpa[];
   routeIdDiscountID: string[];
   routeIdDiscountPrice: string[];
   isDiscount: boolean;
-  firstPassenger: { passengers: string; passengerTels: string; ticketTypeId: string, ticketCategoryName: string, ticketCategoryLineId: string } | null;
-  firstTicketId: string;
-  firstTpaId: string;
+  selectedStartLocationAddress: string;
+  selectedEndLocationAddress: string;
 }
 
 export default class PassengerForm extends Component<{}, State> {
@@ -34,18 +36,41 @@ export default class PassengerForm extends Component<{}, State> {
     departureDate: "",
     ticketQuantities: {}, // Initialize with an empty object
     ticket: {} as Ticket,
-    addedTickets: [], // Initialize as empty array
+    addedTickets: [],
     routeIdDiscountID: [],
     routeIdDiscountPrice: [],
     isDiscount: false,
     firstPassenger: null,
     firstTicketId: '',
     firstTpaId: '',
+    selectedStartLocationAddress: '',
+    selectedEndLocationAddress: '',
   };
 
   async componentDidMount() {
     const ticket = Taro.getStorageSync('ticket');
     const ticketDate = Taro.getStorageSync('ticket_date');
+    const isDiscount = Taro.getStorageSync('isDiscount');
+    const ticketQuantities = Taro.getStorageSync('ticketQuantities');
+    const addedTickets = Taro.getStorageSync('addedTickets');
+    const departureRunId = Taro.getStorageSync('departureRunId');
+    const departureOriginId = Taro.getStorageSync('departureOriginId');
+    const departureDestinationId = Taro.getStorageSync('departureDestinationId');
+    const selectedStartLocationAddress = Taro.getStorageSync('selectedStartLocationAddress');
+    const selectedEndLocationAddress = Taro.getStorageSync('selectedEndLocationAddress');
+
+    this.setState({
+      ticket: ticket,
+      departureDate: ticketDate,
+      ticketQuantities: ticketQuantities,
+      addedTickets: addedTickets,
+      departureRunId: departureRunId,
+      departureOriginId: departureOriginId,
+      departureDestinationId: departureDestinationId,
+      isDiscount: isDiscount,
+      selectedStartLocationAddress: selectedStartLocationAddress,
+      selectedEndLocationAddress: selectedEndLocationAddress,
+    });
 
     if (!ticket) {
       Taro.redirectTo({
@@ -60,30 +85,58 @@ export default class PassengerForm extends Component<{}, State> {
       return;
     }
 
-    await RemoteSettingsService.getInstance().initialize();
-    const routeIdDiscount = RemoteSettingsService.getInstance().getList('routeId_discount', []);
-    const routeIdDiscountID = routeIdDiscount.map(item => item.split('/')[0]); // [341, 342]
-    const routeIdDiscountPrice = routeIdDiscount.map(item => item.split('/')[1]); // [0.9, 0.9]
+    if (isDiscount) {
+      await RemoteSettingsService.getInstance().initialize();
+      const routeIdDiscount = RemoteSettingsService.getInstance().getList('routeId_discount', []);
+      const routeIdDiscountID = routeIdDiscount.map(item => item.split('/')[0]); // [341, 342]
+      const routeIdDiscountPrice = routeIdDiscount.map(item => item.split('/')[1]); // [0.9, 0.9]
 
-    this.setState({
-      routeIdDiscountID: routeIdDiscountID,
-      routeIdDiscountPrice: routeIdDiscountPrice,
-    });
 
-    const setDiscountPrice = routeIdDiscountID.includes(ticket.laRouteId);
-    if (setDiscountPrice) {
       this.setState({
-        isDiscount: true,
+        routeIdDiscountID: routeIdDiscountID,
+        routeIdDiscountPrice: routeIdDiscountPrice,
       });
 
-      ticket.tpa.forEach(tpa => {
-        tpa.fee = (parseFloat(tpa.fee) * parseFloat(routeIdDiscountPrice[routeIdDiscountID.indexOf(ticket.laRouteId)])).toFixed(0);
-      });
+      const setDiscountPrice = routeIdDiscountID.includes(ticket.laRouteId);
+      if (setDiscountPrice) {
+        this.setState({
+          isDiscount: true,
+        });
+
+        ticket.tpa.forEach(tpa => {
+          tpa.fee = (parseFloat(tpa.fee) * parseFloat(routeIdDiscountPrice[routeIdDiscountID.indexOf(ticket.laRouteId)])).toFixed(0);
+        });
+      }
     }
 
     this.setState({
       ticket: ticket,
       departureDate: ticketDate,
+    });
+
+    // Determine the first ticket, tpa, and passenger after the update
+    let firstTicketId = '';
+    let firstTpaId = '';
+    let firstPassenger = null;
+
+    // Find the first non-empty ticket group
+    for (const tId in ticketQuantities) {
+      const tpaEntries = ticketQuantities[tId];
+      for (const tpaId in tpaEntries) {
+        if (tpaEntries[tpaId] && tpaEntries[tpaId].length > 0) {
+          firstTicketId = tId;
+          firstTpaId = tpaId;
+          firstPassenger = tpaEntries[tpaId][0];
+          break;
+        }
+      }
+      if (firstPassenger) break;
+    }
+
+    this.setState({
+      firstTicketId: firstTicketId,
+      firstTpaId: firstTpaId,
+      firstPassenger: firstPassenger,
     });
   }
 
@@ -284,75 +337,9 @@ export default class PassengerForm extends Component<{}, State> {
     return (Math.round(total * 100)).toString();
   }
 
-  handleQuantityChange = (ticketId: string, tpaId: string, value: number) => {
-    // Find the ticket info for this specific type
-    const ticketInfo = Array.isArray(this.state.ticket?.tpa)
-      ? this.state.ticket.tpa.find(tpa => tpa.ticketTypeId === tpaId)
-      : this.state.ticket?.tpa && this.state.ticket.tpa.ticketTypeId === tpaId
-        ? this.state.ticket.tpa
-        : null;
-
-    if (!ticketInfo) return;
-
-    this.setState((prevState) => {
-      // Update just this specific ticket type's quantities
-      const updatedTicketQuantities = {
-        ...prevState.ticketQuantities,
-        [ticketId]: {
-          ...prevState.ticketQuantities[ticketId] || {},
-          [tpaId]: Array(value).fill({
-            passengers: prevState.ticketQuantities[ticketId]?.[tpaId]?.[0]?.passengers || '',
-            passengerTels: prevState.ticketQuantities[ticketId]?.[tpaId]?.[0]?.passengerTels || '',
-            ticketTypeId: tpaId,
-            ticketCategoryName: ticketInfo?.spareField4 || '',
-            ticketCategoryLineId: ticketInfo?.ticketCategoryLineId || '',
-          }),
-        },
-      };
-
-      // Filter out existing tickets of this type
-      const filteredTickets = prevState.addedTickets.filter(t => t.ticketTypeId !== tpaId);
-
-      // Add the updated quantity of this ticket type
-      const updatedAddedTickets = value > 0
-        ? [...filteredTickets, ...Array(value).fill(ticketInfo)]
-        : filteredTickets;
-
-      // Determine the first ticket, tpa, and passenger after the update
-      let firstTicketId = '';
-      let firstTpaId = '';
-      let firstPassenger = null;
-
-      // Find the first non-empty ticket group
-      for (const tId in updatedTicketQuantities) {
-        const tpaEntries = updatedTicketQuantities[tId];
-        for (const tId in tpaEntries) {
-          if (tpaEntries[tId] && tpaEntries[tId].length > 0) {
-            firstTicketId = tId;
-            firstTpaId = tId;
-            firstPassenger = tpaEntries[tId][0];
-            break;
-          }
-        }
-        if (firstPassenger) break;
-      }
-
-      return {
-        addedTickets: updatedAddedTickets,
-        departureDestinationId: ticketInfo?.endStopId || prevState.departureDestinationId || '1',
-        departureOriginId: ticketInfo?.beginStopId || prevState.departureOriginId || '1',
-        departureRunId: prevState.ticket?.runId || '',
-        ticketQuantities: updatedTicketQuantities,
-        firstTicketId,
-        firstTpaId,
-        firstPassenger,
-      };
-    });
-  };
-
 
   render() {
-    const { ticketQuantities, ticket, firstPassenger, firstTicketId, firstTpaId } = this.state;
+    const { ticketQuantities, ticket, firstPassenger, addedTickets, routeIdDiscountPrice, routeIdDiscountID, isDiscount, firstTicketId, firstTpaId } = this.state;
 
 
     return (
@@ -361,79 +348,42 @@ export default class PassengerForm extends Component<{}, State> {
 
           <AtCard
             key={ticket?.runId}
-            title={ticket?.tpa ? (
-              `${Array.isArray(ticket.tpa) ? ticket.tpa[1]?.beginStopName || '' : ticket.tpa?.beginStopName || ''} \n ↓ \n${Array.isArray(ticket.tpa) ? ticket.tpa[1]?.endStopName || '' : ticket.tpa?.endStopName || ''}`
-            ) : I18n.loading}
+            title={'車票詳情'}
           >
             <AtList>
+              <AtListItem className='location-item' title={I18n.departure} extraText={addedTickets?.[0]?.beginStopName || ''} />
+              <AtListItem title={I18n.address} note={this.state.selectedStartLocationAddress} disabled={false} />
+              <AtListItem className='location-item' title={I18n.destination} extraText={addedTickets?.[0]?.endStopName || ''} />
+              <AtListItem title={I18n.address} note={this.state.selectedEndLocationAddress} disabled={false} />
               <AtListItem title={I18n.departureTime} extraText={ticket?.runStartTime} disabled={false} />
 
               {
                 this.state.isDiscount ? (
                   <>
-                    <AtListItem className="original-price" title={I18n.price} extraText={`$${this.state.addedTickets.reduce((total, tpa) => total + (parseFloat(tpa.fee) / parseFloat(this.state.routeIdDiscountPrice[this.state.routeIdDiscountID.indexOf(ticket?.laRouteId)]) || 0), 0).toFixed(0)}`} disabled={false} />
-                    <AtListItem className="discount-display" title={`${this.state.routeIdDiscountPrice[this.state.routeIdDiscountID.indexOf(ticket?.laRouteId)].split('.')[1]}${I18n.discount}`} extraText={`${I18n.discountPrice} $${this.state.addedTickets.reduce((total, tpa) => total + (parseFloat(tpa.fee) || 0), 0).toFixed(0)}`} disabled={false} />
+                    <AtListItem className="original-price" title={I18n.price} extraText={`$${this.state.addedTickets.reduce((total, tpa) => total + (parseFloat(tpa.fee) / parseFloat(this.state.routeIdDiscountPrice[this.state.routeIdDiscountID.indexOf(ticket.laRouteId)]) || 0), 0).toFixed(0)}`} disabled={false} />
+                    <AtListItem className="discount-display" title={`${this.state.routeIdDiscountPrice[this.state.routeIdDiscountID.indexOf(ticket.laRouteId)]}${I18n.discount}`} extraText={`${I18n.discountPrice} $${this.state.addedTickets.reduce((total, tpa) => total + (parseFloat(tpa.fee) || 0), 0).toFixed(0)}`} disabled={false} />
                   </>
                 ) : <AtListItem title={I18n.price} extraText={`$${this.state.addedTickets.reduce((total, tpa) => total + (parseFloat(tpa.fee) || 0), 0).toFixed(0)}`} disabled={false} />
               }
 
             </AtList>
-            {Array.isArray(ticket?.tpa) ? (
-              ticket.tpa.map((tpa) => (
-                <AtList key={tpa.ticketTypeId}>
+
+            {Array.from(new Set(this.state.addedTickets.map(t => t.ticketTypeId))).map((ticketTypeId) => {
+              const tpa = this.state.addedTickets.find(t => t.ticketTypeId === ticketTypeId);
+              return (
+                <AtList key={ticketTypeId}>
                   <AtListItem
-                    title={`${tpa.ticketType}: $${this.state.isDiscount ?
-                      (parseFloat(tpa.fee) / parseFloat(this.state.routeIdDiscountPrice[this.state.routeIdDiscountID.indexOf(ticket?.laRouteId)]) || 0).toFixed(0)
+                    title={`${tpa!.ticketType}: $${this.state.isDiscount ?
+                      (parseFloat(tpa!.fee) / parseFloat(this.state.routeIdDiscountPrice[this.state.routeIdDiscountID.indexOf(ticket.laRouteId)]) || 0).toFixed(0)
                       :
-                      (parseFloat(tpa.fee) || 0).toFixed(0)}`}
-                    extraText={""}
+                      (parseFloat(tpa!.fee) || 0).toFixed(0)}`}
+                    extraText={'x' + (ticketQuantities[ticket?.runId]?.[ticketTypeId]?.length || 0)}
                     hasBorder={true}
                     iconInfo={{ size: 20, color: "dark-green", value: "money" }}
                   />
-                  <View style={{ display: 'flex', justifyContent: 'flex-end' }}>
-                    <AtInputNumber
-                      min={0}
-                      max={10}
-                      step={1}
-                      size='large'
-                      value={ticketQuantities[ticket?.runId]?.[tpa.ticketTypeId]?.length || 0}
-                      onChange={(value) => {
-                        this.handleQuantityChange(ticket?.runId, tpa.ticketTypeId, value);
-                      }}
-                      type={'number'}
-                    />
-                  </View>
                 </AtList>
-              ))
-            ) : (ticket?.tpa && !Array.isArray(ticket.tpa)) ? (
-              <AtList key={ticket.tpa.ticketTypeId}>
-
-                <AtListItem
-                  title={`${ticket.tpa.ticketType}: $${this.state.isDiscount ?
-                    (parseFloat(ticket.tpa.fee) / parseFloat(this.state.routeIdDiscountPrice[this.state.routeIdDiscountID.indexOf(ticket?.laRouteId)]) || 0).toFixed(0)
-                    :
-                    (parseFloat(ticket.tpa.fee) || 0).toFixed(0)}`}
-                  extraText={""}
-                  hasBorder={true}
-                  iconInfo={{ size: 20, color: "dark-green", value: "money" }}
-                />
-                <View style={{ display: 'flex', justifyContent: 'flex-end' }}>
-                  <AtInputNumber
-                    min={0}
-                    max={10}
-                    step={1}
-                    size='large'
-                    value={ticketQuantities[ticket?.runId]?.[ticket.tpa.ticketTypeId]?.length || 0}
-                    onChange={(value) => {
-                      if (ticket?.tpa && !Array.isArray(ticket.tpa)) {  // Add type guard here
-                        this.handleQuantityChange(ticket?.runId, ticket.tpa.ticketTypeId, value);
-                      }
-                    }}
-                    type={'number'}
-                  />
-                </View>
-              </AtList>
-            ) : null}
+              );
+            })}
 
           </AtCard>
           {firstPassenger && (

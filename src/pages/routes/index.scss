@@ -169,3 +169,29 @@
   font-weight: bold;
   color:#141414;
 }
+
+.item-content__info-title{
+  font-weight: bold;
+}
+
+.discount-display{
+    font-size: 30px;
+    font-weight: bold;
+    color: red;
+
+    .item-extra__info{
+        color: red;
+    }
+}
+
+.original-price {
+    .item-extra__info {
+        text-decoration: line-through;
+        color: #999;
+    }
+}
+.ticket-item{
+  .at-list__item-extra{
+    max-width: 200px;
+  }
+}

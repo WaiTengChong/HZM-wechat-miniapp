@@ -35,6 +35,7 @@ export const I18n = new LocalizedStrings({
     pleaseSelectNewDate: "请选择日期",
     submit: "提交",
     pleaseSelectTicket: "请选择一张车票",
+    noMoreSeatsAvailable: "没有更多座位可用",
     // Passenger form translations
     passengerInfo: "乘客资料",
     passengerName: "乘客姓名",
@@ -65,6 +66,7 @@ export const I18n = new LocalizedStrings({
     getTicketInfoSuccess: "获取票号信息成功",
     getTicketInfoFailed: "获取票号信息失败",
     noTicketInfo: "未找到票务信息",
+    ticketQuantityFixed: "已选票数量不可更改",
     // Support page translations
     onlineCustomerSupport: "在线客服支持",
     connectingCustomerService: "正在连接客服...",
@@ -142,6 +144,7 @@ export const I18n = new LocalizedStrings({
     pleaseSelectNewDate: "請選擇日期",
     submit: "提交",
     pleaseSelectTicket: "請選擇一張車票",
+    noMoreSeatsAvailable: "沒有更多座位可用",
     // Passenger form translations
     passengerInfo: "乘客資料",
     passengerName: "乘客姓名",
@@ -172,6 +175,7 @@ export const I18n = new LocalizedStrings({
     getTicketInfoSuccess: "獲取票號信息成功",
     getTicketInfoFailed: "獲取票號信息失敗",
     noTicketInfo: "未找到票務信息",
+    ticketQuantityFixed: "已選票數量不可更改",
     // Support page translations
     onlineCustomerSupport: "線上客服支援",
     connectingCustomerService: "正在連接客服...",

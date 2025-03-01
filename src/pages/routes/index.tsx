@@ -2,7 +2,7 @@ import { Picker, Text, View } from '@tarojs/components';
 import Taro from "@tarojs/taro";
 import dayjs from 'dayjs';
 import { Component } from 'react';
-import { AtActivityIndicator, AtButton, AtCalendar, AtCheckbox, AtDivider, AtGrid, AtList, AtListItem, AtSteps } from 'taro-ui';
+import { AtActivityIndicator, AtButton, AtCalendar, AtCheckbox, AtDivider, AtGrid, AtInputNumber, AtList, AtListItem, AtSteps } from 'taro-ui';
 import "taro-ui/dist/style/components/button.scss"; // 按需引入
 import { fetchRoutesAPILocal, getDeparturesZL, getLocationByRoute } from "../../api/api";
 import { I18n } from '../../I18n';
@@ -36,7 +36,7 @@ export default class Routes extends Component<{}, State> {
     endAreaList: [],
     ticketData: [],
     selectedTicketIndex: 0,
-    selectedTicket: null,
+    selectedTicket: {} as Ticket,
     routeTimeLoading: false,
     checkboxOption: [{
       value: 'agree',
@@ -44,6 +44,14 @@ export default class Routes extends Component<{}, State> {
       desc: '',
     }],
     isCheckBoxClicked: false,
+    ticketQuantities: {},
+    addedTickets: [],
+    routeIdDiscountID: [],
+    routeIdDiscountPrice: [],
+    isDiscount: false,
+    departureOriginId: '',
+    departureDestinationId: '',
+    showTicketInfo: false,
   };
 
   // Fetch data from the API when the component mounts
@@ -66,7 +74,7 @@ export default class Routes extends Component<{}, State> {
           loading: false,
         });
 
-        
+
       } else {
         console.error('Invalid response:', response.message);
         this.setState({ loading: false });
@@ -87,7 +95,37 @@ export default class Routes extends Component<{}, State> {
     this.setState({ loading });
   }
 
-  loadRouteTime = async (date: string,isFirst:boolean = false) => {
+  checkDiscount = async (ticket: Ticket) => {
+    await RemoteSettingsService.getInstance().initialize();
+    const routeIdDiscount = RemoteSettingsService.getInstance().getList('routeId_discount', []);
+    const routeIdDiscountID = routeIdDiscount.map(item => item.split('/')[0]); // [341, 342]
+    const routeIdDiscountPrice = routeIdDiscount.map(item => item.split('/')[1]); // [0.9, 0.9]
+
+    this.setState({
+      routeIdDiscountID: routeIdDiscountID,
+      routeIdDiscountPrice: routeIdDiscountPrice,
+    });
+
+    const setDiscountPrice = routeIdDiscountID.includes(ticket.laRouteId);
+    if (setDiscountPrice) {
+      this.setState({
+        isDiscount: true,
+      });
+
+      if (Array.isArray(ticket.tpa)) {
+        ticket.tpa.forEach(tpa => {
+          tpa.fee = (parseFloat(tpa.fee) * parseFloat(routeIdDiscountPrice[routeIdDiscountID.indexOf(ticket.laRouteId)])).toFixed(0);
+        });
+      } else if (ticket.tpa) {
+        ticket.tpa.fee = (parseFloat(ticket.tpa.fee) * parseFloat(routeIdDiscountPrice[routeIdDiscountID.indexOf(ticket.laRouteId)])).toFixed(0);
+      }
+    }
+    this.setState({
+      selectedTicket: ticket,
+    });
+  }
+
+  loadRouteTime = async (date: string, isFirst: boolean = false) => {
     this.setState({ routeTimeLoading: true });
     try {
       Taro.showLoading({ title: '加載中...' });
@@ -100,21 +138,22 @@ export default class Routes extends Component<{}, State> {
         date
       );
       if (response.run != undefined && response.run.length > 0) {
-        
+
         //if the date is today, only show the ticket that is after the current time
-        if(date === dayjs().format('YYYY-MM-DD')){
+        if (date === dayjs().format('YYYY-MM-DD')) {
           this.setState({
             ticketData: response.run.filter(ticket => dayjs(`${date} ${ticket.runStartTime}`).isAfter(dayjs().add(1, 'hour')))
           });
-        }else{
+        } else {
           this.setState({
             ticketData: response.run,
           });
         }
 
         Taro.setStorageSync("ticket_date", this.state.dateSel);
+
       } else {
-        this.setState({ ticketData: [] });
+        this.setState({ ticketData: [], showTicketInfo: false });
         if (!isFirst) {
           Taro.showToast({ title: '没有可用的车票', icon: 'none' })
         }
@@ -203,7 +242,7 @@ export default class Routes extends Component<{}, State> {
   onStepChange = async (stepCurrent: number) => {
     // If at step 0, prevent moving forward
     if (this.state.stepCurrent === 0) {
-      return; 
+      return;
     }
 
     // If at step 1, only allow going back to step 0
@@ -244,27 +283,30 @@ export default class Routes extends Component<{}, State> {
 
   // Handle date changes
   onDateChange = async (e: any) => {
-    console.log(e);
     await this.setState({
       dateSel: e.value, // Use e.date for date input
       selectedTicketIndex: 0,
-      selectedTicket: null
+      selectedTicket: {} as Ticket,
     });
     await this.loadRouteTime(e.value);
   };
 
-  onTicketChange = (e: any) => {
+  onTicketChange = async (e: any) => {
     const index = parseInt(e.detail.value);
     const selectedTicket = this.state.ticketData![index];
-    this.setState({
+    await this.setState({
       selectedTicket,
       selectedTicketIndex: index
+    });
+    await this.checkDiscount(selectedTicket);
+    this.setState({
+      showTicketInfo: true,
     });
   };
 
   handleConfirmSelection = () => {
     const { selectedTicket, isCheckBoxClicked } = this.state;
-    
+
     if (!selectedTicket) {
       Taro.showToast({
         title: I18n.pleaseSelectTicket,
@@ -273,7 +315,7 @@ export default class Routes extends Component<{}, State> {
       });
       return;
     }
-    
+
     if (!isCheckBoxClicked) {
       Taro.showToast({
         title: I18n.pleaseAgreeToTerms,
@@ -282,17 +324,109 @@ export default class Routes extends Component<{}, State> {
       });
       return;
     }
-    
+
     Taro.setStorageSync('ticket', selectedTicket);
+    Taro.setStorageSync('isDiscount', this.state.isDiscount);
+    Taro.setStorageSync('ticketQuantities', this.state.ticketQuantities);
+    Taro.setStorageSync('addedTickets', this.state.addedTickets);
+    Taro.setStorageSync('departureRunId', this.state.selectedTicket?.runId);
+    Taro.setStorageSync('departureOriginId', this.state.departureOriginId);
+    Taro.setStorageSync('departureDestinationId', this.state.departureDestinationId);
+    Taro.setStorageSync('selectedStartLocationAddress', this.state.selectedStartLocationAddress);
+    Taro.setStorageSync('selectedEndLocationAddress', this.state.selectedEndLocationAddress);
     Taro.navigateTo({
       url: `/pages/info/index`
     });
   };
 
+  handleQuantityChange = (ticketId: string, tpaId: string, value: number, seatNum: string) => {
+    // Find the ticket info for this specific type
+    var availableSeatNum = parseInt(seatNum);
+
+    const ticketInfo = Array.isArray(this.state.selectedTicket?.tpa)
+      ? this.state.selectedTicket.tpa.find(tpa => tpa.ticketTypeId === tpaId)
+      : this.state.selectedTicket?.tpa && this.state.selectedTicket.tpa.ticketTypeId === tpaId
+        ? this.state.selectedTicket.tpa
+        : null;
+
+    if (!ticketInfo) return;
+
+    this.setState((prevState) => {
+      // Filter out existing tickets of this type
+      const filteredTickets = prevState.addedTickets.filter(t => t.ticketTypeId !== tpaId);
+
+      // Calculate the total number of tickets after this change
+      const totalTicketsAfterChange = filteredTickets.length + value;
+
+      // Check if the total number of tickets exceeds the available seats
+      if (totalTicketsAfterChange > availableSeatNum) {
+        // Show toast message
+        Taro.showToast({
+          title: I18n.noMoreSeatsAvailable,
+          icon: 'none',
+          duration: 2000
+        });
+
+        // Return the current state without changes
+        return prevState;
+      }
+
+      // Update just this specific ticket type's quantities
+      const updatedTicketQuantities = {
+        ...prevState.ticketQuantities,
+        [ticketId]: {
+          ...prevState.ticketQuantities[ticketId] || {},
+          [tpaId]: Array(value).fill({
+            passengers: prevState.ticketQuantities[ticketId]?.[tpaId]?.[0]?.passengers || '',
+            passengerTels: prevState.ticketQuantities[ticketId]?.[tpaId]?.[0]?.passengerTels || '',
+            ticketTypeId: tpaId,
+            ticketCategoryName: ticketInfo?.spareField4 || '',
+            ticketCategoryLineId: ticketInfo?.ticketCategoryLineId || '',
+          }),
+        },
+      };
+
+      // Add the updated quantity of this ticket type
+      const updatedAddedTickets = value > 0
+        ? [...filteredTickets, ...Array(value).fill(ticketInfo)]
+        : filteredTickets;
+
+      // Determine the first ticket, tpa, and passenger after the update
+      let firstTicketId = '';
+      let firstTpaId = '';
+      let firstPassenger = null;
+
+      // Find the first non-empty ticket group
+      for (const tId in updatedTicketQuantities) {
+        const tpaEntries = updatedTicketQuantities[tId];
+        for (const tId in tpaEntries) {
+          if (tpaEntries[tId] && tpaEntries[tId].length > 0) {
+            firstTicketId = tId;
+            firstTpaId = tId;
+            firstPassenger = tpaEntries[tId][0];
+            break;
+          }
+        }
+        if (firstPassenger) break;
+      }
+
+      return {
+        ...prevState,
+        addedTickets: updatedAddedTickets,
+        departureDestinationId: ticketInfo?.endStopId || prevState.departureDestinationId,
+        departureOriginId: ticketInfo?.beginStopId || prevState.departureOriginId,
+        departureRunId: prevState.selectedTicket?.runId || '',
+        ticketQuantities: updatedTicketQuantities,
+        firstTicketId,
+        firstTpaId,
+        firstPassenger,
+      };
+    });
+  };
+
   // Render the component
   render() {
-    const { route: routes, selectorChecked, selectedRouteId, selectorIndex, dateSel, loading, startLocation, endLocation,
-      location, stepCurrent, selectedStartLocation, selectedStartLocationAddress, selectedEndLocation, selectedEndLocationAddress, selectedStartLocationIndex, selectedEndLocationIndex, startLocations, endLocations, ticketData, selectedTicketIndex, selectedTicket } = this.state;
+    const { route: dateSel, showTicketInfo, checkboxOption, isCheckBoxClicked, location, selectedStartLocationIndex, selectedEndLocationIndex, ticketData, selectedTicketIndex, selectedTicket, ticketQuantities } = this.state;
     const items = [
       { 'title': I18n.route, 'desc': I18n.routeDesc },
       { 'title': I18n.location, 'desc': I18n.locationDesc },
@@ -432,53 +566,118 @@ export default class Routes extends Component<{}, State> {
                   />
                 </AtList>
               ) : (
-                <Picker
-                  mode='selector'
-                  range={ticketData?.filter(ticket => {
-                    const ticketDateTime = dayjs(`${dateSel} ${ticket.runStartTime}`);
-                    return ticketDateTime.isAfter(dayjs().add(1, 'hour'));
-                  }).map(ticket => ticket.runStartTime)}
-                  onChange={this.onTicketChange}
-                  value={selectedTicketIndex}
-                  disabled={this.state.routeTimeLoading || ticketData.length === 0}
-                >
-                  <AtList>
-                    <AtListItem
-                      className={`ticketTime ${ticketData.length === 0 ? 'error' : ''}`}
-                      title={I18n.scheduleTime}
-                      extraText={ticketData.length === 0 ? I18n.pleaseSelectNewDate : selectedTicket?.runStartTime || I18n.pleaseSelect}
-                      arrow={ticketData.length === 0 ? undefined : 'down'}
-                    />
-                  </AtList>
-                </Picker>
+                <>
+                  <Picker
+                    mode='selector'
+                    range={ticketData?.map(ticket => ticket.runStartTime)}
+                    onChange={this.onTicketChange}
+                    value={selectedTicketIndex}
+                    disabled={this.state.routeTimeLoading || ticketData.length === 0}
+                  >
+                    <AtList>
+                      <AtListItem
+                        className={`ticketTime ${ticketData.length === 0 ? 'error' : ''}`}
+                        title={I18n.scheduleTime}
+                        extraText={ticketData.length === 0 ? I18n.pleaseSelectNewDate : selectedTicket?.runStartTime || I18n.pleaseSelect}
+                        arrow={ticketData.length === 0 ? undefined : 'down'}
+                      />
+                    </AtList>
+                  </Picker>
+
+                  {selectedTicket?.tpa && (
+                    <>
+                      <AtList>
+                        {this.state.isDiscount ? (
+                          <>
+                            <AtListItem
+                              className="original-price"
+                              title={I18n.price}
+                              extraText={`$${this.state.addedTickets.reduce((total, tpa) =>
+                                total + (parseFloat(tpa.fee) / parseFloat(this.state.routeIdDiscountPrice[this.state.routeIdDiscountID.indexOf(selectedTicket?.laRouteId)]) || 0), 0).toFixed(0)}`}
+                            />
+                            <AtListItem
+                              className="discount-display"
+                              title={`${this.state.routeIdDiscountPrice[this.state.routeIdDiscountID.indexOf(selectedTicket?.laRouteId)].split('.')[1]}${I18n.discount}`}
+                              extraText={`${I18n.discountPrice} $${this.state.addedTickets.reduce((total, tpa) => total + (parseFloat(tpa.fee) || 0), 0).toFixed(0)}`}
+                            />
+                          </>
+                        ) : (
+                          <AtListItem
+                            title={I18n.price}
+                            extraText={`$${this.state.addedTickets.reduce((total, tpa) => total + (parseFloat(tpa.fee) || 0), 0).toFixed(0)}`}
+                          />
+                        )}
+                      </AtList>
+
+                      {/* Handle both array and single ticket types */}
+                      {(() => {
+                        const tpas = Array.isArray(selectedTicket.tpa)
+                          ? selectedTicket.tpa
+                          : [selectedTicket.tpa];
+
+                        return tpas.map(tpa => {
+                          const price = this.state.isDiscount
+                            ? (parseFloat(tpa.fee) / parseFloat(this.state.routeIdDiscountPrice[this.state.routeIdDiscountID.indexOf(selectedTicket?.laRouteId)]) || 0).toFixed(0)
+                            : (parseFloat(tpa.fee) || 0).toFixed(0);
+
+                          return (
+                            <AtList key={tpa.ticketTypeId}>
+                              <AtListItem
+                                className='ticket-item'
+                                title={`${tpa.ticketType}: $${price}`}
+                                extraText={
+                                  <AtInputNumber
+                                    min={0} max={10} step={1} size='normal' type='number'
+                                    value={ticketQuantities[selectedTicket?.runId]?.[tpa.ticketTypeId]?.length || 0}
+                                    onChange={(value) => this.handleQuantityChange(
+                                      selectedTicket?.runId,
+                                      tpa.ticketTypeId,
+                                      value,
+                                      selectedTicket.seatNum
+                                    )}
+                                  />
+                                }
+                                hasBorder={true}
+                                iconInfo={{ size: 20, color: "dark-green", value: "money" }}
+                              />
+                            </AtList>
+                          );
+                        });
+                      })()}
+                    </>
+                  )}
+                </>
               )}
 
-              <AtDivider content={I18n.luggagePolicy} />
 
-              <View className='page-info'>
-                <AtList hasBorder={false}>{I18n.luggageWelcome}</AtList>
-                <AtList hasBorder={false}>{I18n.luggagePolicy1}</AtList>
-                <AtList hasBorder={false}>{I18n.luggagePolicy2}</AtList>
-                <AtList hasBorder={false}>{I18n.luggagePolicy3}</AtList>
-                <AtList hasBorder={false}>{I18n.luggagePolicy4}</AtList>
-                <AtList hasBorder={false}>{I18n.luggagePolicy5}</AtList>
-                <AtList hasBorder={false}>{I18n.luggagePolicy6}</AtList>
-                <AtList hasBorder={false} className='luggage-padding'>{I18n.luggageSizeA}</AtList>
-                <AtList hasBorder={false} className='luggage-padding'>{I18n.luggageSizeB}</AtList>
-                <AtList hasBorder={false} className='luggage-padding'>{I18n.luggageSizeC}</AtList>
-                <AtList hasBorder={false}>{I18n.luggagePolicy7}</AtList>
-                <AtList hasBorder={false} className='luggage-padding'>{I18n.luggageCheckTime}</AtList>
-                <AtList hasBorder={false}>{I18n.luggagePolicy8}</AtList>
-                <AtList hasBorder={false}>{I18n.luggagePolicy9}</AtList>
-                <AtList hasBorder={false}>{I18n.luggagePolicy10}</AtList>
-                <AtList hasBorder={false}>{I18n.luggagePolicy11}</AtList>
-              </View>
-              
-              <AtCheckbox
-                options={this.state.checkboxOption}
-                selectedList={this.state.isCheckBoxClicked ? ['agree'] : []}
-                onChange={this.handleCheckBoxChange}
-              />
+              {showTicketInfo && (<>
+                <AtDivider content={I18n.luggagePolicy} />
+                <View className='page-info'>
+                  <AtList hasBorder={false}>{I18n.luggageWelcome}</AtList>
+                  <AtList hasBorder={false}>{I18n.luggagePolicy1}</AtList>
+                  <AtList hasBorder={false}>{I18n.luggagePolicy2}</AtList>
+                  <AtList hasBorder={false}>{I18n.luggagePolicy3}</AtList>
+                  <AtList hasBorder={false}>{I18n.luggagePolicy4}</AtList>
+                  <AtList hasBorder={false}>{I18n.luggagePolicy5}</AtList>
+                  <AtList hasBorder={false}>{I18n.luggagePolicy6}</AtList>
+                  <AtList hasBorder={false} className='luggage-padding'>{I18n.luggageSizeA}</AtList>
+                  <AtList hasBorder={false} className='luggage-padding'>{I18n.luggageSizeB}</AtList>
+                  <AtList hasBorder={false} className='luggage-padding'>{I18n.luggageSizeC}</AtList>
+                  <AtList hasBorder={false}>{I18n.luggagePolicy7}</AtList>
+                  <AtList hasBorder={false} className='luggage-padding'>{I18n.luggageCheckTime}</AtList>
+                  <AtList hasBorder={false}>{I18n.luggagePolicy8}</AtList>
+                  <AtList hasBorder={false}>{I18n.luggagePolicy9}</AtList>
+                  <AtList hasBorder={false}>{I18n.luggagePolicy10}</AtList>
+                  <AtList hasBorder={false}>{I18n.luggagePolicy11}</AtList>
+                </View>
+
+                <AtCheckbox
+                  options={checkboxOption}
+                  selectedList={isCheckBoxClicked ? ['agree'] : []}
+                  onChange={this.handleCheckBoxChange}
+                />
+              </>
+              )}
               <View className='confirm-button'>
                 <AtButton type='primary'
                   disabled={this.state.loading}

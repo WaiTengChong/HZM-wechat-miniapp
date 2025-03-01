@@ -82,8 +82,26 @@ interface State {
   endAreaList: string[];
   ticketData: Ticket[];
   selectedTicketIndex: number;
-  selectedTicket: Ticket | null;
+  selectedTicket: Ticket;
   routeTimeLoading: boolean;
   checkboxOption: { value; label; desc }[];
   isCheckBoxClicked: boolean;
+  ticketQuantities: {
+    [ticketId: string]: {
+      [tpaId: string]: {
+        passengers: string;
+        passengerTels: string;
+        ticketTypeId: string;
+        ticketCategoryName: string;
+        ticketCategoryLineId: string;
+      }[];
+    };
+  };
+  addedTickets: Tpa[];
+  routeIdDiscountID: string[];
+  routeIdDiscountPrice: string[];
+  isDiscount: boolean;
+  departureOriginId: string;
+  departureDestinationId: string;
+  showTicketInfo: boolean;
 }
