@@ -279,8 +279,9 @@ export default class PassengerForm extends Component<{}, State> {
     }
   };
 
-  getTotalPrice = () => {
-    return this.state.addedTickets.reduce((total, tpa) => total + (parseFloat(tpa.fee) || 0), 0).toFixed(0);
+  getTotalPrice = (): string => {
+    const total = this.state.addedTickets.reduce((sum, tpa) => sum + (parseFloat(tpa.fee) || 0), 0);
+    return (Math.round(total * 100)).toString();
   }
 
   handleQuantityChange = (ticketId: string, tpaId: string, value: number) => {
