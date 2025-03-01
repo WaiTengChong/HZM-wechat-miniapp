@@ -84,4 +84,6 @@ interface State {
   selectedTicketIndex: number;
   selectedTicket: Ticket | null;
   routeTimeLoading: boolean;
+  checkboxOption: { value; label; desc }[];
+  isCheckBoxClicked: boolean;
 }

@@ -2,7 +2,7 @@ import { Picker, Text, View } from '@tarojs/components';
 import Taro from "@tarojs/taro";
 import dayjs from 'dayjs';
 import { Component } from 'react';
-import { AtActivityIndicator, AtButton, AtCalendar, AtDivider, AtGrid, AtList, AtListItem, AtSteps } from 'taro-ui';
+import { AtActivityIndicator, AtButton, AtCalendar, AtCheckbox, AtDivider, AtGrid, AtList, AtListItem, AtSteps } from 'taro-ui';
 import "taro-ui/dist/style/components/button.scss"; // 按需引入
 import { fetchRoutesAPILocal, getDeparturesZL, getLocationByRoute } from "../../api/api";
 import { I18n } from '../../I18n';
@@ -38,6 +38,12 @@ export default class Routes extends Component<{}, State> {
     selectedTicketIndex: 0,
     selectedTicket: null,
     routeTimeLoading: false,
+    checkboxOption: [{
+      value: 'agree',
+      label: I18n.checkBoxText,
+      desc: '',
+    }],
+    isCheckBoxClicked: false,
   };
 
   // Fetch data from the API when the component mounts
@@ -188,6 +194,11 @@ export default class Routes extends Component<{}, State> {
 
     })
   }
+  handleCheckBoxChange = (selectedList: string[]) => {
+    this.setState({
+      isCheckBoxClicked: selectedList.includes('agree')
+    });
+  }
 
   onStepChange = async (stepCurrent: number) => {
     // If at step 0, prevent moving forward
@@ -252,19 +263,30 @@ export default class Routes extends Component<{}, State> {
   };
 
   handleConfirmSelection = () => {
-    const { selectedTicket } = this.state;
+    const { selectedTicket, isCheckBoxClicked } = this.state;
+    
     if (!selectedTicket) {
       Taro.showToast({
         title: I18n.pleaseSelectTicket,
         icon: 'none',
         duration: 2000
       });
-    } else {
-      Taro.setStorageSync('ticket', selectedTicket);
-      Taro.navigateTo({
-        url: `/pages/info/index`
-      });
+      return;
     }
+    
+    if (!isCheckBoxClicked) {
+      Taro.showToast({
+        title: I18n.pleaseAgreeToTerms,
+        icon: 'none',
+        duration: 2000
+      });
+      return;
+    }
+    
+    Taro.setStorageSync('ticket', selectedTicket);
+    Taro.navigateTo({
+      url: `/pages/info/index`
+    });
   };
 
   // Render the component
@@ -451,7 +473,12 @@ export default class Routes extends Component<{}, State> {
                 <AtList hasBorder={false}>{I18n.luggagePolicy10}</AtList>
                 <AtList hasBorder={false}>{I18n.luggagePolicy11}</AtList>
               </View>
-
+              
+              <AtCheckbox
+                options={this.state.checkboxOption}
+                selectedList={this.state.isCheckBoxClicked ? ['agree'] : []}
+                onChange={this.handleCheckBoxChange}
+              />
               <View className='confirm-button'>
                 <AtButton type='primary'
                   disabled={this.state.loading}
