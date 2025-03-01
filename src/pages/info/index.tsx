@@ -26,6 +26,7 @@ interface State {
   selectedStartLocationAddress: string;
   selectedEndLocationAddress: string;
   countryCode: string;
+  phoneError: boolean;
 }
 
 export default class PassengerForm extends Component<{}, State> {
@@ -47,6 +48,7 @@ export default class PassengerForm extends Component<{}, State> {
     selectedStartLocationAddress: '',
     selectedEndLocationAddress: '',
     countryCode: '86',
+    phoneError: false,
   };
 
   async componentDidMount() {
@@ -212,6 +214,21 @@ export default class PassengerForm extends Component<{}, State> {
       .replace(/\s+/g, '');
   };
 
+  validatePhoneNumber = (phone: string, countryCode: string): boolean => {
+    if (!phone) return false;
+    
+    switch(countryCode) {
+      case '86': // China
+        return phone.length === 11;
+      case '852': // Hong Kong
+        return phone.length === 8;
+      case '853': // Macau
+        return phone.length === 8;
+      default:
+        return false;
+    }
+  };
+
   handleInputChange = (field: 'name' | 'tel' | 'id', value: string) => {
     this.setState((prevState) => {
       let firstPassenger: { passengers: string; passengerTels: string; ticketTypeId: string; ticketCategoryName: string; ticketCategoryLineId: string } | null = null;
@@ -228,12 +245,31 @@ export default class PassengerForm extends Component<{}, State> {
           firstPassenger = updatedTicketQuantities[tId][tpId][0];
         });
       });
-      return { ticketQuantities: updatedTicketQuantities, firstPassenger: firstPassenger };
+      
+      let phoneError = false;
+      if (field === 'tel') {
+        phoneError = firstPassenger ? !this.validatePhoneNumber(value, prevState.countryCode) : false;
+      }
+      
+      return { 
+        ticketQuantities: updatedTicketQuantities, 
+        firstPassenger: firstPassenger,
+        phoneError: phoneError
+      };
     });
   };
 
   handleCountryCodeChange = (value: string) => {
-    this.setState({ countryCode: value });
+    this.setState((prevState) => {
+      const phoneError = prevState.firstPassenger ? 
+        !this.validatePhoneNumber(prevState.firstPassenger.passengerTels, value) : 
+        false;
+      
+      return {
+        countryCode: value,
+        phoneError: phoneError
+      };
+    });
   };
 
   handleSubmit = async () => {
@@ -345,7 +381,7 @@ export default class PassengerForm extends Component<{}, State> {
 
 
   render() {
-    const { ticketQuantities, ticket, firstPassenger, addedTickets, routeIdDiscountPrice, routeIdDiscountID, isDiscount, firstTicketId, firstTpaId, countryCode } = this.state;
+    const { ticketQuantities, ticket, firstPassenger, addedTickets, routeIdDiscountPrice, routeIdDiscountID, isDiscount, firstTicketId, firstTpaId, countryCode, phoneError } = this.state;
 
 
     return (
@@ -425,7 +461,7 @@ export default class PassengerForm extends Component<{}, State> {
                     </Picker>
                   </View>
                   <Input
-                    className='phone-input'
+                    className={`phone-input ${phoneError ? 'phone-input-error' : ''}`}
                     name="passengerTel"
                     type="number"
                     placeholder={I18n.enterPassengerPhone}
@@ -436,6 +472,14 @@ export default class PassengerForm extends Component<{}, State> {
                     }}
                   />
                 </View>
+                {phoneError && (
+                  <Text className="error-message">
+                    {countryCode === '86' 
+                      ? '請輸入11位有效電話號碼' // Please enter a valid 11-digit phone number
+                      : '請輸入8位有效電話號碼'  // Please enter a valid 8-digit phone number
+                    }
+                  </Text>
+                )}
               </AtForm>
             </View>
           )}
@@ -451,7 +495,7 @@ export default class PassengerForm extends Component<{}, State> {
               )
             ).every((passenger) =>
               passenger.passengers && passenger.passengerTels
-            ) && (
+            ) && !phoneError && (
                 <AtButton type="primary" className='submit-button' onClick={this.handleSubmit}>
                   {I18n.submit}
                 </AtButton>

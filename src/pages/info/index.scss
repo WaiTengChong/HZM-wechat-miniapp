@@ -154,3 +154,19 @@
 .phone-input {
   flex: 1;
 }
+
+.phone-input-error {
+  border: 1px solid #ff4d4f !important;
+  background-color: #fff2f0;
+  margin:0;
+  height: 100%;
+  width: 100%;
+}
+
+.error-message {
+  color: #ff4d4f;
+  font-size: 24px;
+  margin-top: -5px;
+  margin-bottom: 10px;
+  display: block;
+}
