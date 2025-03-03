@@ -23,8 +23,7 @@ const DEPARTURES_ZL = "web/departuresZL";
 const BUS_LINES = "web/busLines";
 const RESERVATIONS = "web/reservations";
 const GET_TICKETS = "web/getTickets";
-const CANCEL_ORDER = "web/cancelOrder";
-const GET_ORDER_INFO = "web/getOrderInfo";
+const CANCEL_ORDER = "web/cancelOrder";const GET_ORDER_INFO = "web/getOrderInfo";
 const GET_TICKET_INFO = "web/getTicketInfo";
 const WX_LOGIN = "web/wxLogin";
 const CREATE_WECHAT_PAY_JSAPI = "pay/createWechatPayJsapi";
@@ -62,11 +61,10 @@ const makeAPICall = async (
         title: response.data.message,
         icon: "error",
       }).then(() => {
+
+        Taro.clearStorageSync();
         Taro.navigateTo({
-          url: "/pages/index/index",
-          success: () => {
-            Taro.clearStorageSync();
-          }
+          url: "/pages/index/index"
         });
       });
       return Promise.reject(response.data.message);

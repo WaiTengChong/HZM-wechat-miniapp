@@ -3,11 +3,12 @@ import Taro from "@tarojs/taro";
 import { Component, PropsWithChildren } from 'react';
 import { AtGrid, AtIcon } from 'taro-ui';
 import "taro-ui/dist/style/components/button.scss"; // 按需引入
+import logo from '../../../src/image/HZM_Logo.png';
+import location from '../../../src/image/location.png';
 import { wxLogin } from '../../api/api';
 import { I18n } from '../../I18n';
 import { RemoteSettingsService } from '../../services/remoteSettings';
-
-import logo from '../../../src/image/HZM_Logo.png';
+import { openPDF } from '../../utils/pdfUtils';
 import './index.scss';
 
 type State = {
@@ -19,16 +20,21 @@ type State = {
 };
 
 export default class Index extends Component<PropsWithChildren, State> {
-
+  openPDF = openPDF;
   state: State = {
     current: 0,
     loginStatus: false,
     nickName: '',
     language: 'zh',
-    banner:[]
+    banner: []
   }
 
   async componentDidMount() {
+
+    setTimeout(() => {
+      Taro.hideHomeButton();
+    }, 100);
+
     await RemoteSettingsService.getInstance().initialize().then(() => {
       this.getBanner();
     });
@@ -49,7 +55,7 @@ export default class Index extends Component<PropsWithChildren, State> {
   }
 
   getBanner = () => {
-    const banner =  RemoteSettingsService.getInstance().getList("home_banner", []);
+    const banner = RemoteSettingsService.getInstance().getList("home_banner", []);
     this.setState({
       banner: banner
     });
@@ -77,7 +83,8 @@ export default class Index extends Component<PropsWithChildren, State> {
     if (index === 2) {
       Taro.navigateTo({ url: '/pages/support/index' });
     }
-    if (index === 4) {
+    if (index === 3) {
+      this.openPDF();
     }
   }
 
@@ -108,7 +115,7 @@ export default class Index extends Component<PropsWithChildren, State> {
     const OPEN_ID = Taro.getStorageSync("OPEN_ID");
     if (!AUTH_TICKET || !OPEN_ID) {
       this.handleLogout();
-    }else{
+    } else {
       this.setState({
         loginStatus: true
       })
@@ -116,35 +123,11 @@ export default class Index extends Component<PropsWithChildren, State> {
 
     //检测sessionkey
     Taro.checkSession({
-      success: () => {
-        Taro.getUserInfo({
-          success: (res) => {
-            this.setState({
-              nickName: res.userInfo.nickName
-            })
-          },
-          fail: (err) => {
-            console.log(err, "getUserInfo err");
-            Taro.showToast({
-              title: I18n.getUserInfoFailed,
-              icon: 'error',
-              duration: 2000
-            })
-          }
-        })
-      },
+      success: () => { },
       fail: () => {
         this.setState({
           loginStatus: false
         })
-        Taro.showToast({
-          title: I18n.sessionExpired,
-          icon: 'error',
-          duration: 2000
-        })
-        // session_key 已经失效，需要重新执行登录流程
-        // 登录
-        wxLogin();
       }
     });
   }
@@ -192,13 +175,13 @@ export default class Index extends Component<PropsWithChildren, State> {
                       <Text className='logged-in'>{I18n.loggedIn}</Text>
                       <AtIcon className='login-status-icon-check' value='check' size='20' color='#6190E8' />
                     </View>
-                      <Text className='user-info'>{}</Text>
+                      <Text className='user-info'>{ }</Text>
                     </>
                   ) : (
                     <View className='login-wrapper'>
-                      <Button 
-                        className='invisible-button' 
-                        openType='getPhoneNumber' 
+                      <Button
+                        className='invisible-button'
+                        openType='getPhoneNumber'
                         onGetPhoneNumber={this.getPhoneNumber}
                       />
                       <Text className='user-info-not-logged-in'>{I18n.clickToLogin}</Text>
@@ -225,6 +208,10 @@ export default class Index extends Component<PropsWithChildren, State> {
                 {
                   image: 'https://img.icons8.com/color/48/000000/info.png',
                   value: I18n.customerService
+                },
+                {
+                  image: location,
+                  value: I18n.locationInfo
                 }
               ]}
             />
@@ -236,17 +223,17 @@ export default class Index extends Component<PropsWithChildren, State> {
                 {this.state.language === 'zh' ? '切換至繁體' : '切换至简体'}
               </Text>
             </View>
-            
+
             {this.state.loginStatus && (
               <View className='logout-container'>
                 <Text
                   className='logout-text'
-                  onClick={this.handleLogout}
+                  onClick={() => this.handleLogout()}
                 >
                   {I18n.logout}
                 </Text>
                 <Text className='version-text'>
-                  0.1.3
+                  0.1.4
                 </Text>
               </View>
             )}

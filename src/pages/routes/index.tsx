@@ -2,14 +2,18 @@ import { Picker, Text, View } from '@tarojs/components';
 import Taro from "@tarojs/taro";
 import dayjs from 'dayjs';
 import { Component } from 'react';
-import { AtActivityIndicator, AtButton, AtCalendar, AtCheckbox, AtDivider, AtGrid, AtInputNumber, AtList, AtListItem, AtSteps } from 'taro-ui';
+import { AtActivityIndicator, AtButton, AtCalendar, AtCheckbox, AtDivider, AtGrid, AtIcon, AtInputNumber, AtList, AtListItem, AtSteps } from 'taro-ui';
 import "taro-ui/dist/style/components/button.scss"; // 按需引入
 import { fetchRoutesAPILocal, getDeparturesZL, getLocationByRoute } from "../../api/api";
 import { I18n } from '../../I18n';
 import { RemoteSettingsService } from '../../services/remoteSettings';
+import { openPDF } from '../../utils/pdfUtils';
 import './index.scss';
 
 export default class Routes extends Component<{}, State> {
+
+  openPDF = openPDF;
+
   // Initialize state
   state: State = {
     route: [],
@@ -523,6 +527,7 @@ export default class Routes extends Component<{}, State> {
                 <AtListItem
                   title={I18n.address}
                   note={this.state.selectedStartLocationAddress}
+                  extraText={<AtIcon value='map-pin' size='30' color='red' onClick={() => this.openPDF()} />}
                 />
               </View>
 
@@ -549,6 +554,7 @@ export default class Routes extends Component<{}, State> {
                 <AtListItem
                   title={I18n.address}
                   note={this.state.selectedEndLocationAddress}
+                  extraText={<AtIcon value='map-pin' size='30' color='red' onClick={() => this.openPDF()} />}
                 />
               </View>
 
@@ -557,93 +563,97 @@ export default class Routes extends Component<{}, State> {
                 <AtCalendar currentDate={''} minDate={dayjs().format('YYYY-MM-DD')} maxDate={dayjs().add(1, 'month').format('YYYY-MM-DD')} onDayClick={this.onDateChange} />
               </View>
 
-              <Text className='section-title'>{I18n.selectSchedule}</Text>
-              {this.state.routeTimeLoading ? (
-                <AtList>
-                  <AtListItem
-                    title={I18n.scheduleTime}
-                    extraText={I18n.loadingEllipsis}
-                  />
-                </AtList>
-              ) : (
+              {this.state.dateSel !== '' && (
                 <>
-                  <Picker
-                    mode='selector'
-                    range={ticketData?.map(ticket => ticket.runStartTime)}
-                    onChange={this.onTicketChange}
-                    value={selectedTicketIndex}
-                    disabled={this.state.routeTimeLoading || ticketData.length === 0}
-                  >
+                  <Text className='section-title'>{I18n.selectSchedule}</Text>
+                  {this.state.routeTimeLoading ? (
                     <AtList>
                       <AtListItem
-                        className={`ticketTime ${ticketData.length === 0 ? 'error' : ''}`}
                         title={I18n.scheduleTime}
-                        extraText={ticketData.length === 0 ? I18n.pleaseSelectNewDate : selectedTicket?.runStartTime || I18n.pleaseSelect}
-                        arrow={ticketData.length === 0 ? undefined : 'down'}
+                        extraText={I18n.loadingEllipsis}
                       />
                     </AtList>
-                  </Picker>
-
-                  {selectedTicket?.tpa && (
+                  ) : (
                     <>
-                      <AtList>
-                        {this.state.isDiscount ? (
-                          <>
-                            <AtListItem
-                              className="original-price"
-                              title={I18n.price}
-                              extraText={`$${this.state.addedTickets.reduce((total, tpa) =>
-                                total + (parseFloat(tpa.fee) / parseFloat(this.state.routeIdDiscountPrice[this.state.routeIdDiscountID.indexOf(selectedTicket?.laRouteId)]) || 0), 0).toFixed(0)}`}
-                            />
-                            <AtListItem
-                              className="discount-display"
-                              title={`${this.state.routeIdDiscountPrice[this.state.routeIdDiscountID.indexOf(selectedTicket?.laRouteId)].split('.')[1]}${I18n.discount}`}
-                              extraText={`${I18n.discountPrice} $${this.state.addedTickets.reduce((total, tpa) => total + (parseFloat(tpa.fee) || 0), 0).toFixed(0)}`}
-                            />
-                          </>
-                        ) : (
+                      <Picker
+                        mode='selector'
+                        range={ticketData?.map(ticket => ticket.runStartTime)}
+                        onChange={this.onTicketChange}
+                        value={selectedTicketIndex}
+                        disabled={this.state.routeTimeLoading || ticketData.length === 0}
+                      >
+                        <AtList>
                           <AtListItem
-                            title={I18n.price}
-                            extraText={`$${this.state.addedTickets.reduce((total, tpa) => total + (parseFloat(tpa.fee) || 0), 0).toFixed(0)}`}
+                            className={`ticketTime ${ticketData.length === 0 ? 'error' : ''}`}
+                            title={I18n.scheduleTime}
+                            extraText={ticketData.length === 0 ? I18n.pleaseSelectNewDate : selectedTicket?.runStartTime || I18n.pleaseSelect}
+                            arrow={ticketData.length === 0 ? undefined : 'down'}
                           />
-                        )}
-                      </AtList>
+                        </AtList>
+                      </Picker>
 
-                      {/* Handle both array and single ticket types */}
-                      {(() => {
-                        const tpas = Array.isArray(selectedTicket.tpa)
-                          ? selectedTicket.tpa
-                          : [selectedTicket.tpa];
-
-                        return tpas.map(tpa => {
-                          const price = this.state.isDiscount
-                            ? (parseFloat(tpa.fee) / parseFloat(this.state.routeIdDiscountPrice[this.state.routeIdDiscountID.indexOf(selectedTicket?.laRouteId)]) || 0).toFixed(0)
-                            : (parseFloat(tpa.fee) || 0).toFixed(0);
-
-                          return (
-                            <AtList key={tpa.ticketTypeId}>
+                      {selectedTicket?.tpa && (
+                        <>
+                          <AtList>
+                            {this.state.isDiscount ? (
+                              <>
+                                <AtListItem
+                                  className="original-price"
+                                  title={I18n.price}
+                                  extraText={`$${this.state.addedTickets.reduce((total, tpa) =>
+                                    total + (parseFloat(tpa.fee) / parseFloat(this.state.routeIdDiscountPrice[this.state.routeIdDiscountID.indexOf(selectedTicket?.laRouteId)]) || 0), 0).toFixed(0)}`}
+                                />
+                                <AtListItem
+                                  className="discount-display"
+                                  title={`${this.state.routeIdDiscountPrice[this.state.routeIdDiscountID.indexOf(selectedTicket?.laRouteId)].split('.')[1]}${I18n.discount}`}
+                                  extraText={`${I18n.discountPrice} $${this.state.addedTickets.reduce((total, tpa) => total + (parseFloat(tpa.fee) || 0), 0).toFixed(0)}`}
+                                />
+                              </>
+                            ) : (
                               <AtListItem
-                                className='ticket-item'
-                                title={`${tpa.ticketType}: $${price}`}
-                                extraText={
-                                  <AtInputNumber
-                                    min={0} step={1} size='normal' type='number'
-                                    value={ticketQuantities[selectedTicket?.runId]?.[tpa.ticketTypeId]?.length || 0}
-                                    onChange={(value) => this.handleQuantityChange(
-                                      selectedTicket?.runId,
-                                      tpa.ticketTypeId,
-                                      value,
-                                      selectedTicket.seatNum
-                                    )}
-                                  />
-                                }
-                                hasBorder={true}
-                                iconInfo={{ size: 20, color: "dark-green", value: "money" }}
+                                title={I18n.price}
+                                extraText={`$${this.state.addedTickets.reduce((total, tpa) => total + (parseFloat(tpa.fee) || 0), 0).toFixed(0)}`}
                               />
-                            </AtList>
-                          )
-                        })
-                      })()}
+                            )}
+                          </AtList>
+
+                          {/* Handle both array and single ticket types */}
+                          {(() => {
+                            const tpas = Array.isArray(selectedTicket.tpa)
+                              ? selectedTicket.tpa
+                              : [selectedTicket.tpa];
+
+                            return tpas.map(tpa => {
+                              const price = this.state.isDiscount
+                                ? (parseFloat(tpa.fee) / parseFloat(this.state.routeIdDiscountPrice[this.state.routeIdDiscountID.indexOf(selectedTicket?.laRouteId)]) || 0).toFixed(0)
+                                : (parseFloat(tpa.fee) || 0).toFixed(0);
+
+                              return (
+                                <AtList key={tpa.ticketTypeId}>
+                                  <AtListItem
+                                    className='ticket-item'
+                                    title={`${tpa.ticketType}: $${price}`}
+                                    extraText={
+                                      <AtInputNumber
+                                        min={0} step={1} size='normal' type='number'
+                                        value={ticketQuantities[selectedTicket?.runId]?.[tpa.ticketTypeId]?.length || 0}
+                                        onChange={(value) => this.handleQuantityChange(
+                                          selectedTicket?.runId,
+                                          tpa.ticketTypeId,
+                                          value,
+                                          selectedTicket.seatNum
+                                        )}
+                                      />
+                                    }
+                                    hasBorder={true}
+                                    iconInfo={{ size: 20, color: "dark-green", value: "money" }}
+                                  />
+                                </AtList>
+                              )
+                            })
+                          })()}
+                        </>
+                      )}
                     </>
                   )}
                 </>
@@ -676,15 +686,17 @@ export default class Routes extends Component<{}, State> {
                   selectedList={isCheckBoxClicked ? ['agree'] : []}
                   onChange={this.handleCheckBoxChange}
                 />
+
+                <View className='confirm-button'>
+                  <AtButton type='primary'
+                    disabled={this.state.loading}
+                    loading={this.state.loading}
+                    onClick={() => !this.state.loading && this.handleConfirmSelection()}
+                  >{I18n.submit}</AtButton>
+                </View>
               </>
+
               )}
-              <View className='confirm-button'>
-                <AtButton type='primary'
-                  disabled={this.state.loading}
-                  loading={this.state.loading}
-                  onClick={() => !this.state.loading && this.handleConfirmSelection()}
-                >{I18n.submit}</AtButton>
-              </View>
             </>
           )}
         </View>

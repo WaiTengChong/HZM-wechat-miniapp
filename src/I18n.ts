@@ -13,6 +13,7 @@ export const I18n = new LocalizedStrings({
     buyTicket: "购买车票",
     myTickets: "我的车票",
     customerService: "客服中心",
+    locationInfo: "站点信息",
     loading: "加载中",
     // Routes page translations
     route: "路线",
@@ -122,6 +123,7 @@ export const I18n = new LocalizedStrings({
     buyTicket: "購買車票",
     myTickets: "我的車票",
     customerService: "客服中心",
+    locationInfo: "站點資訊",
     loading: "加載中",
     // Routes page translations
     route: "路線",
