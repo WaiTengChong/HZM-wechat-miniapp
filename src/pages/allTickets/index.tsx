@@ -3,6 +3,7 @@ import Taro from '@tarojs/taro';
 import { Component } from 'react';
 import { GetOrderInfoResponse } from 'src/components/OrderInfoAPI';
 import { AtAccordion, AtActivityIndicator, AtCard, AtDivider, AtList } from 'taro-ui';
+import apiLogo from '../../../src/image/apiLogo.png';
 import logo from '../../../src/image/logo-no.png';
 import { getOrderInfo, getOrderList } from '../../api/api';
 import { I18n } from '../../I18n';
@@ -173,7 +174,7 @@ export default class TicketListPage extends Component<{}, State> {
                             key={orderNo}
                             open={isOpen}
                             onClick={() => this.handleClick(orderNo)}
-                            title={`${I18n.ticketNumber}: ${orderNo}${order ? ` | ${I18n.ticketCost}: $${this.formatPrice(order.orderCost)}` : ''}`}
+                            title={`${I18n.orderNumber}: ${orderNo}${order ? ` | ${I18n.orderCost}: $${this.formatPrice(order.orderCost)}` : ''}`}
                         >
                             {isLoading ? (
                                 <View className='loading-container'>
@@ -197,7 +198,7 @@ export default class TicketListPage extends Component<{}, State> {
                                                 </View>
                                                 
                                                 <View className='ticket-cost'>
-                                                    <Text>{I18n.ticketCost}：${this.formatPrice(detail.cost)}</Text>
+                                                    <Text>{I18n.orderCost}：${this.formatPrice(detail.cost)}</Text>
                                                 </View>
 
                                                 <View className='ticket-route'>
@@ -212,8 +213,12 @@ export default class TicketListPage extends Component<{}, State> {
                                                     <Text>{I18n.ticketNumber}：{detail.ticketCode}</Text>
                                                 </View>
 
-                                                {this.renderQRCode(detail.ticketCode)}
-
+                                                {this.renderQRCode(detail.takeTicketCode)}
+                                                <View className='apiLogo-container'>
+                                                    <Image className='apiLogo' src={apiLogo} />
+                                                    <Text className='early-arrival'>{I18n.earlyArrival}</Text>
+                                                </View>
+                                                
                                                     <View className='ticket-footer'>
                                                         <AtDivider content={I18n.luggagePolicy} />
 
@@ -252,7 +257,7 @@ export default class TicketListPage extends Component<{}, State> {
                                                 </View>
                                                 
                                                 <View className='ticket-cost'>
-                                                    <Text>{I18n.ticketCost}：${this.formatPrice(order.orderDetailLst.cost)}</Text>
+                                                    <Text>{I18n.orderCost}：${this.formatPrice(order.orderDetailLst.cost)}</Text>
                                                 </View>
 
                                                 <View className='ticket-route'>
@@ -267,8 +272,11 @@ export default class TicketListPage extends Component<{}, State> {
                                                     <Text>{I18n.ticketNumber}：{order.orderDetailLst.ticketCode}</Text>
                                                 </View>
 
-                                                {this.renderQRCode(order.orderDetailLst.ticketCode)}
-
+                                                    {this.renderQRCode(order.orderDetailLst.takeTicketCode)}
+                                                    <View className='apiLogo-container'>
+                                                        <Image className='apiLogo' src={apiLogo} />
+                                                        <Text className='early-arrival'>{I18n.earlyArrival}</Text>
+                                                    </View>
                                                 <View className='ticket-footer'>
                                                         <AtDivider content={I18n.luggagePolicy} />
 

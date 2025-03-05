@@ -211,6 +211,13 @@
   }
 }
 
+.apiLogo-container{
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+}
+
 .loading-container {
   padding: 20px;
   display: flex;
@@ -220,10 +227,23 @@
 }
 
 .page-info {
-  font-size: 20px;
+  font-size: 25px;
   text-align: left;
+  gap:5px;
+}
+
+.apiLogo {
+  width: 180px;
+  height: 90px;
 }
 
 .luggage-padding {
   padding-left: 20px;
+}
+
+.early-arrival {
+  font-size: 25px;
+  color: black;
+  font-weight: bold;
+  margin-top: 10px;
 }

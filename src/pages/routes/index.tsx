@@ -310,8 +310,7 @@ export default class Routes extends Component<{}, State> {
 
   handleConfirmSelection = () => {
     const { selectedTicket, isCheckBoxClicked } = this.state;
-
-    if (!selectedTicket) {
+    if (!selectedTicket || this.state.addedTickets.length === 0) {
       Taro.showToast({
         title: I18n.pleaseSelectTicket,
         icon: 'none',
@@ -563,7 +562,7 @@ export default class Routes extends Component<{}, State> {
                 <AtCalendar currentDate={''} minDate={dayjs().format('YYYY-MM-DD')} maxDate={dayjs().add(1, 'month').format('YYYY-MM-DD')} onDayClick={this.onDateChange} />
               </View>
 
-              {this.state.dateSel !== '' && (
+              {this.state.dateSel !== '' && ticketData.length !== 0 && (
                 <>
                   <Text className='section-title'>{I18n.selectSchedule}</Text>
                   {this.state.routeTimeLoading ? (

@@ -233,7 +233,7 @@ export default class Index extends Component<PropsWithChildren, State> {
                   {I18n.logout}
                 </Text>
                 <Text className='version-text'>
-                  0.1.4
+                  0.1.5
                 </Text>
               </View>
             )}

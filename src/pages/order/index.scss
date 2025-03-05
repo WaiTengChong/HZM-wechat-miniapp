@@ -2,12 +2,32 @@
 @import "~taro-ui/dist/style/components/card.scss";
 @import "~taro-ui/dist/style/components/input-number.scss";
 @import "~taro-ui/dist/style/components/icon.scss";
+@import "../allTickets/index.scss";
 .order-detail-container {
   padding: 20px;
 
   .at-card__header-extra{
     max-width: 400px;
   }
+}
+
+.order-success-text {
+  font-size: 60px;
+  font-weight: bold;
+  color: #008000;
+  padding-top: 20px;
+  padding-bottom: 60px;
+  margin-top: 45px;
+}
+
+.order-success-container{
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  padding-top: 20px;
+  padding-bottom: 60px;
 }
 
 .order-card {

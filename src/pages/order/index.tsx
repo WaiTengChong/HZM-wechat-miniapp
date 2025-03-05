@@ -1,15 +1,18 @@
-import { Image, Text, View } from '@tarojs/components';
+import { Icon, Image, Text, View } from '@tarojs/components';
 import Taro from "@tarojs/taro";
 import React from "react";
 import { CancelOrderResponse } from 'src/components/cancelOrderAPI';
 import { GetTicketInfoResponse } from 'src/components/getTicketInfoAPI';
 import { TicketResponse } from 'src/components/getTicketsAPI';
 import { GetOrderInfoResponse } from 'src/components/OrderInfoAPI';
-import { AtButton, AtCard, AtDivider, AtListItem } from "taro-ui";
+import { AtButton, AtCard, AtDivider, AtIcon, AtList } from "taro-ui";
 import { cancelOrder, getOrderInfo, getTicketInfo } from '../../api/api'; // Import the API method
 import { I18n } from '../../I18n';
 import "./index.scss";
 
+// Import assets
+import apiLogo from '../../../src/image/apiLogo.png';
+import logo from '../../../src/image/logo-no.png';
 
 interface OrderDetailState {
   tickets: {
@@ -21,12 +24,17 @@ interface OrderDetailState {
     depatureOriginName: string;
     runDate: string;
     runTime: string;
+    onAddress?: string;
+    offAddress?: string;
   }[];
 }
 
 export default class OrderDetail extends React.Component<{}, OrderDetailState> {
-  // Add page configuration
+  // Update page configuration to disable back button
   config = {
+    navigationBarTitleText: '',
+    enablePullDownRefresh: false,
+    disableScroll: false,
     navigationBarBackButton: false,
     navigationStyle: 'custom'
   }
@@ -60,6 +68,8 @@ export default class OrderDetail extends React.Component<{}, OrderDetailState> {
         depatureOriginName: detail.depatureOriginName,
         runDate: detail.runDate,
         runTime: detail.runTime,
+        onAddress: detail.onAddress,
+        offAddress: detail.offAddress,
       }));
     });
 
@@ -97,56 +107,127 @@ export default class OrderDetail extends React.Component<{}, OrderDetailState> {
     }
   };
 
+  formatPrice = (price: string): string => {
+    return parseFloat(price).toFixed(2);
+  };
+
+
+  handleQRCodeClick = (ticketCode: string) => {
+    Taro.previewImage({
+      urls: [`https://api.qrserver.com/v1/create-qr-code/?data=${ticketCode}&size=600x600`]
+    });
+  }
+
+
+  renderQRCode = (ticketCode: string) => {
+    return (
+      <View className='qr-section'>
+        <View
+          className='qr-code-container'
+          onClick={() => this.handleQRCodeClick(ticketCode)}
+        >
+          <Image
+            src={`https://api.qrserver.com/v1/create-qr-code/?data=${ticketCode}&size=400x400`}
+            className='qr-code'
+          />
+        </View>
+        <Text className='qr-code-text'>{ticketCode}</Text>
+      </View>
+    );
+  }
+
+  // Override the componentDidShow lifecycle method to handle back button
+  componentDidShow() {
+    // Add a custom event listener for back button press
+    Taro.eventCenter.on('navigateBack', () => {
+      // Prevent default back behavior and navigate to index instead
+      Taro.redirectTo({ url: '/pages/index/index' });
+    });
+  }
+  
+  componentWillUnmount() {
+    // Clean up event listener
+    Taro.eventCenter.off('navigateBack');
+  }
+
   render() {
     const { tickets } = this.state;
     return (
       <View className="order-detail-container">
         {tickets.map((ticket, index) => (
-          <AtCard 
-            key={ticket.orderNo + index}
-            title={I18n.orderDetail}
-            extra={ticket.orderNo} 
-            className="order-card"
-          >
-            <View className="depature-info">
-              <Text className="depature-text">
-                {ticket.depatureDestinatName} → {ticket.depatureOriginName}
-              </Text>
+          <View key={`ticket-${index}`}>
+            <View className='order-success-container'>
+              <Text className='order-success-text'>{I18n.orderSuccess}</Text>
+              <AtIcon value='check-circle' size='70' color='#008000' />
             </View>
-            <AtDivider content={I18n.qrCode} />
-            <View 
-              className="qr-code-container" 
-              onClick={() => Taro.previewImage({ 
-                urls: [`https://api.qrserver.com/v1/create-qr-code/?data=${ticket.qrCodeUrl}&size=600x600`] 
-              })}
+            <AtCard
+              title={`${I18n.orderNumber}: ${ticket.orderNo}`}
+              key={`${ticket.orderNo}-${index}`}
+              className='ticket-card'
             >
-              <Image 
-                src={`https://api.qrserver.com/v1/create-qr-code/?data=${ticket.qrCodeUrl}&size=600x600`} 
-                className="qr-code" 
-              />
-            </View>
-            <AtDivider content={I18n.ticketInfo} />
-            <View className="order-info">
-              <AtListItem title={I18n.ticketNumber} extraText={ticket.ticketNo} />
-              <AtListItem title={I18n.ticketPrice} hasBorder={false} extraText={`$${parseFloat(ticket.cost).toFixed(2).replace(/\.?0+$/, '')}`} />
-              <AtListItem title={I18n.departureDate} hasBorder={false} extraText={ticket.runDate} />
-              <AtListItem title={I18n.departureTime} hasBorder={false} extraText={ticket.runTime} />
-            </View>
-            {/* <AtButton
-              type="secondary"
-              className="cancel-button"
-              onClick={() => this.handleGetTicketInfo(ticket.ticketNo)}
-            >
-              {I18n.viewTicket}
-            </AtButton>
-            <AtButton
-              type="secondary"
-              className="cancel-button"
-              onClick={() => this.handleOrderInfo(ticket.orderNo)}
-            >
-              {I18n.viewOrder}
-            </AtButton> */}
-          </AtCard>
+              <View className='ticket-header'>
+                <Image className='company-logo' src={logo} />
+                <View className='service-hotline-container'>
+                  <Text className='service-hotline-title'>{I18n.customerService}：</Text>
+                  <Text className='service-hotline'>(852)29798778</Text>
+                  <Text className='service-hotline'>(86)4008822322</Text>
+                </View>
+              </View>
+
+              <View className='ticket-cost'>
+                <Text>{I18n.orderCost}：${this.formatPrice(ticket.cost)}</Text>
+              </View>
+
+              <View className='ticket-route'>
+                <Text className='run-time'>{I18n.departureDate}：{ticket.runDate}</Text>
+                <Text className='run-time'>{I18n.departureTime}：{ticket.runTime}</Text>
+                <Text className='route-text'>{ticket.depatureOriginName} → {ticket.depatureDestinatName}</Text>
+                {ticket.onAddress && (
+                  <Text className='on-board-text'>
+                    <Text style={{ fontWeight: 'bold' }}>{I18n.departure}：</Text>{'\n'}{ticket.onAddress}
+                  </Text>
+                )}
+                {ticket.offAddress && (
+                  <Text className='off-board-text'>
+                    <Text style={{ fontWeight: 'bold' }}>{I18n.destination}：</Text>{'\n'}{ticket.offAddress}
+                  </Text>
+                )}
+              </View>
+
+              <View className='ticket-info'>
+                <Text>{I18n.ticketNumber}：{ticket.ticketNo}</Text>
+              </View>
+
+              {this.renderQRCode(ticket.qrCodeUrl)}
+              <View className='apiLogo-container'>
+                <Image className='apiLogo' src={apiLogo} />
+                <Text className='early-arrival'>{I18n.earlyArrival}</Text>
+              </View>
+
+              <View className='ticket-footer'>
+                <AtDivider content={I18n.luggagePolicy} />
+
+                <View className='page-info'>
+                  <AtList hasBorder={false}>{I18n.luggageWelcome}</AtList>
+                  <AtList hasBorder={false}>{I18n.luggagePolicy1}</AtList>
+                  <AtList hasBorder={false}>{I18n.luggagePolicy2}</AtList>
+                  <AtList hasBorder={false}>{I18n.luggagePolicy3}</AtList>
+                  <AtList hasBorder={false}>{I18n.luggagePolicy4}</AtList>
+                  <AtList hasBorder={false}>{I18n.luggagePolicy5}</AtList>
+                  <AtList hasBorder={false}>{I18n.luggagePolicy6}</AtList>
+                  <AtList hasBorder={false} className='luggage-padding'>{I18n.luggageSizeA}</AtList>
+                  <AtList hasBorder={false} className='luggage-padding'>{I18n.luggageSizeB}</AtList>
+                  <AtList hasBorder={false} className='luggage-padding'>{I18n.luggageSizeC}</AtList>
+                  <AtList hasBorder={false}>{I18n.luggagePolicy7}</AtList>
+                  <AtList hasBorder={false} className='luggage-padding'>{I18n.luggageCheckTime}</AtList>
+                  <AtList hasBorder={false}>{I18n.luggagePolicy8}</AtList>
+                  <AtList hasBorder={false}>{I18n.luggagePolicy9}</AtList>
+                  <AtList hasBorder={false}>{I18n.luggagePolicy10}</AtList>
+                  <AtList hasBorder={false}>{I18n.luggagePolicy11}</AtList>
+                </View>
+              </View>
+            </AtCard>
+          </View>
         ))}
         <AtButton
           type="primary"

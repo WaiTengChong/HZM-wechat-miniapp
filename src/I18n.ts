@@ -33,7 +33,7 @@ export const I18n = new LocalizedStrings({
     scheduleTime: "班次时间",
     loadingEllipsis: "加载中...",
     pleaseSelect: "请选择",
-    pleaseSelectNewDate: "请选择日期",
+    pleaseSelectNewDate: "请重新选择日期",
     submit: "提交",
     pleaseSelectTicket: "请选择一张车票",
     noMoreSeatsAvailable: "没有更多座位可用",
@@ -50,7 +50,7 @@ export const I18n = new LocalizedStrings({
     departureTime: "发车时间",
     price: "总价钱",
     ticketType: "票种",
-    ticketCost: "票价",
+    orderCost: "价格",
     // Order detail page translations
     orderDetail: "订单详情",
     qrCode: "二维码",
@@ -78,6 +78,7 @@ export const I18n = new LocalizedStrings({
     ticketNotFound: "未找到车票信息",
     discount: "折",
     discountPrice: "折后价",
+    orderNumber: "订单号",
     // Luggage policy translations,
     luggagePolicy: "豪华轿车注意事项",
     luggageWelcome:
@@ -111,6 +112,9 @@ export const I18n = new LocalizedStrings({
     checkBoxText:
       "「本人已详细阅读并同意上述所有服务条款，包括购票规定、行李限制、证件要求及退改政策等内容，并同意遵守相关规定。」",
     pleaseAgreeToTerms: "请同意行李政策",
+    earlyArrival:
+      "旅客须于最少于发车前15分钟，凭QR Code到上车点售票处换取车票。",
+    orderSuccess: "订票成功",
   },
   hk: {
     login: "登入",
@@ -143,7 +147,7 @@ export const I18n = new LocalizedStrings({
     scheduleTime: "車票時間",
     loadingEllipsis: "加載中...",
     pleaseSelect: "請選擇",
-    pleaseSelectNewDate: "請選擇日期",
+    pleaseSelectNewDate: "請重新選擇日期",
     submit: "提交",
     pleaseSelectTicket: "請選擇一張車票",
     noMoreSeatsAvailable: "沒有更多座位可用",
@@ -160,12 +164,13 @@ export const I18n = new LocalizedStrings({
     departureTime: "發車時間",
     price: "總價錢",
     ticketType: "票種",
-    ticketCost: "票價",
+    orderCost: "價格",
     // Order detail page translations
     orderDetail: "訂單詳情",
     qrCode: "二維碼",
     ticketInfo: "車票信息",
     ticketNumber: "票號",
+    orderNumber: "訂單號",
     ticketPrice: "車票價格",
     departureDate: "出發日期",
     viewTicket: "查看票號",
@@ -221,6 +226,9 @@ export const I18n = new LocalizedStrings({
     checkBoxText:
       "「本人已詳細閱讀並同意上述所有服務條款，包括購票規定、行李限制、證件要求及退改政策等內容，並同意遵守相關規定。」",
     pleaseAgreeToTerms: "請同意行李政策",
+    earlyArrival:
+      "旅客須於最少於發車前15分鐘，憑QR Code到上車點售票處換取車票。",
+    orderSuccess: "訂票成功",
   },
 });
 
