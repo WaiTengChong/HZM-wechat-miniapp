@@ -1,4 +1,4 @@
-import { Icon, Image, Text, View } from '@tarojs/components';
+import { Image, Text, View } from '@tarojs/components';
 import Taro from "@tarojs/taro";
 import React from "react";
 import { CancelOrderResponse } from 'src/components/cancelOrderAPI';
@@ -198,7 +198,7 @@ export default class OrderDetail extends React.Component<{}, OrderDetailState> {
                 <Text>{I18n.ticketNumber}：{ticket.ticketNo}</Text>
               </View>
 
-              {this.renderQRCode(ticket.qrCodeUrl)}
+              {this.renderQRCode(ticket.ticketNo)}
               <View className='apiLogo-container'>
                 <Image className='apiLogo' src={apiLogo} />
                 <Text className='early-arrival'>{I18n.earlyArrival}</Text>

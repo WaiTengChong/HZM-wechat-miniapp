@@ -16,7 +16,8 @@ interface State {
   departureRunId: string;
   departureDate: string;
   ticketQuantities: { [ticketId: string]: { [tpaId: string]: { passengers: string; passengerTels: string; ticketTypeId: string, ticketCategoryName: string, ticketCategoryLineId: string }[] } };
-  firstPassenger: { passengers: string; passengerTels: string; ticketTypeId: string, ticketCategoryName: string, ticketCategoryLineId: string } | null;
+  passengerName: string;
+  passengerPhone: string;
   firstTicketId: string;
   firstTpaId: string;
   addedTickets: Tpa[];
@@ -42,7 +43,8 @@ export default class PassengerForm extends Component<{}, State> {
     routeIdDiscountID: [],
     routeIdDiscountPrice: [],
     isDiscount: false,
-    firstPassenger: null,
+    passengerName: "",
+    passengerPhone: "",
     firstTicketId: '',
     firstTpaId: '',
     selectedStartLocationAddress: '',
@@ -118,29 +120,35 @@ export default class PassengerForm extends Component<{}, State> {
       departureDate: ticketDate,
     });
 
-    // Determine the first ticket, tpa, and passenger after the update
+    // Determine the first ticket and tpa
     let firstTicketId = '';
     let firstTpaId = '';
-    let firstPassenger = null;
-
-    // Find the first non-empty ticket group
+    
+    // Find the first non-empty ticket group and extract values if available
     for (const tId in ticketQuantities) {
       const tpaEntries = ticketQuantities[tId];
       for (const tpaId in tpaEntries) {
         if (tpaEntries[tpaId] && tpaEntries[tpaId].length > 0) {
           firstTicketId = tId;
           firstTpaId = tpaId;
-          firstPassenger = tpaEntries[tpaId][0];
+          
+          // Set initial values for passengerName and passengerPhone if available
+          const firstPassengerData = tpaEntries[tpaId][0];
+          if (firstPassengerData) {
+            this.setState({
+              passengerName: firstPassengerData.passengers || "",
+              passengerPhone: firstPassengerData.passengerTels || ""
+            });
+          }
           break;
         }
       }
-      if (firstPassenger) break;
+      if (firstTicketId) break;
     }
 
     this.setState({
       firstTicketId: firstTicketId,
-      firstTpaId: firstTpaId,
-      firstPassenger: firstPassenger,
+      firstTpaId: firstTpaId
     });
   }
 
@@ -216,8 +224,8 @@ export default class PassengerForm extends Component<{}, State> {
 
   validatePhoneNumber = (phone: string, countryCode: string): boolean => {
     if (!phone) return false;
-    
-    switch(countryCode) {
+
+    switch (countryCode) {
       case '86': // China
         return phone.length === 11;
       case '852': // Hong Kong
@@ -230,45 +238,41 @@ export default class PassengerForm extends Component<{}, State> {
   };
 
   handleInputChange = (field: 'name' | 'tel' | 'id', value: string) => {
-    this.setState((prevState) => {
-      let firstPassenger: { passengers: string; passengerTels: string; ticketTypeId: string; ticketCategoryName: string; ticketCategoryLineId: string } | null = null;
-      const updatedTicketQuantities = { ...prevState.ticketQuantities };
+    // First update the ticketQuantities structure
+    const updatedTicketQuantities = { ...this.state.ticketQuantities };
 
-      // Apply the input value to all passengers across all tickets
-      Object.keys(updatedTicketQuantities).forEach(tId => {
-        Object.keys(updatedTicketQuantities[tId]).forEach(tpId => {
-          updatedTicketQuantities[tId][tpId] = updatedTicketQuantities[tId][tpId].map(passenger => ({
-            ...passenger,
-            [field === 'name' ? 'passengers' : field === 'tel' ? 'passengerTels' : 'passengerIds']: value
-          }));
-
-          firstPassenger = updatedTicketQuantities[tId][tpId][0];
-        });
+    // Apply the input value to all passengers across all tickets
+    Object.keys(updatedTicketQuantities).forEach(tId => {
+      Object.keys(updatedTicketQuantities[tId]).forEach(tpId => {
+        updatedTicketQuantities[tId][tpId] = updatedTicketQuantities[tId][tpId].map(passenger => ({
+          ...passenger,
+          [field === 'name' ? 'passengers' : field === 'tel' ? 'passengerTels' : 'passengerIds']: value
+        }));
       });
-      
-      let phoneError = false;
-      if (field === 'tel') {
-        phoneError = firstPassenger ? !this.validatePhoneNumber(value, prevState.countryCode) : false;
-      }
-      
-      return { 
-        ticketQuantities: updatedTicketQuantities, 
-        firstPassenger: firstPassenger,
-        phoneError: phoneError
-      };
     });
+
+    // Update the ticketQuantities
+    this.setState({ ticketQuantities: updatedTicketQuantities });
+
+    // Update the specific field
+    if (field === 'name') {
+      this.setState({ passengerName: value });
+    } else if (field === 'tel') {
+      // Check phone validity
+      const phoneError = !this.validatePhoneNumber(value, this.state.countryCode);
+      this.setState({ 
+        passengerPhone: value,
+        phoneError: phoneError
+      });
+    }
   };
 
   handleCountryCodeChange = (value: string) => {
-    this.setState((prevState) => {
-      const phoneError = prevState.firstPassenger ? 
-        !this.validatePhoneNumber(prevState.firstPassenger.passengerTels, value) : 
-        false;
-      
-      return {
-        countryCode: value,
-        phoneError: phoneError
-      };
+    const phoneError = !this.validatePhoneNumber(this.state.passengerPhone, value);
+
+    this.setState({
+      countryCode: value,
+      phoneError: phoneError
     });
   };
 
@@ -327,7 +331,30 @@ export default class PassengerForm extends Component<{}, State> {
       );
       const test = true;// remove this when go live
       if (response.errorCode === "SUCCESS") {
-        const wxCreateOrderResponseI = await createOrder(response.orderNo, this.getTotalPrice(), response.orderDetailLst.routeName, response.orderDetailLst.ticketCode, response.orderDetailLst.lineBc, response.orderDetailLst.routeName, response.orderDetailLst.ticketTypeId);
+        const goods_detail = Array.isArray(response.orderDetailLst)
+          ? response.orderDetailLst.map(orderDetail => ({
+            goods_id: orderDetail.lineBc,
+            goods_name: orderDetail.routeName + ' ' + orderDetail.ticketCode,
+            quantity: 1,
+            price: parseFloat(orderDetail.cost)
+          }))
+          : [{
+            goods_id: response.orderDetailLst.lineBc,
+            goods_name: response.orderDetailLst.routeName + ' ' + response.orderDetailLst.ticketCode,
+            quantity: 1,
+            price: parseFloat(response.orderDetailLst.cost)
+          }];
+
+        const ticketDetail = Array.isArray(response.orderDetailLst)
+          ? this.getTicketTypeCount(response.orderDetailLst)
+          : response.orderDetailLst.routeName + ' ' + response.orderDetailLst.passangerType + ' x1';
+
+        const wxCreateOrderResponseI = await createOrder(
+          response.orderNo,
+          this.getTotalPrice(),
+          ticketDetail,
+          goods_detail
+        );
         const wxPayResponse = await wxMakePay(wxCreateOrderResponseI.prepay_id);
         if (wxPayResponse === "SUCCESS") {
           // if (test) {
@@ -379,9 +406,39 @@ export default class PassengerForm extends Component<{}, State> {
     return (Math.round(total * 100)).toString();
   }
 
+  // Add this helper function in the component or outside if appropriate
+  getTicketTypeCount(orderDetails: any[]): string {
+    const routeName = orderDetails[0].routeName;
+    const typeCount: Record<string, number> = {};
+
+    // Count occurrences of each passenger type
+    orderDetails.forEach(detail => {
+      const type = detail.passangerType;
+      typeCount[type] = (typeCount[type] || 0) + 1;
+    });
+
+    // Format the result string
+    const typeStrings = Object.entries(typeCount).map(([type, count]) =>
+      `${type}x${count}`
+    );
+
+    return routeName + ' ' + typeStrings.join(', ');
+  }
+
 
   render() {
-    const { ticketQuantities, ticket, firstPassenger, addedTickets, routeIdDiscountPrice, routeIdDiscountID, isDiscount, firstTicketId, firstTpaId, countryCode, phoneError } = this.state;
+    const { 
+      ticketQuantities, 
+      ticket, 
+      addedTickets, 
+      routeIdDiscountPrice, 
+      routeIdDiscountID, 
+      isDiscount, 
+      countryCode, 
+      phoneError,
+      passengerName,
+      passengerPhone
+    } = this.state;
 
 
     return (
@@ -428,61 +485,61 @@ export default class PassengerForm extends Component<{}, State> {
             })}
 
           </AtCard>
-          {firstPassenger && (
-            <View className="form-container">
-              <AtForm>
-                <AtDivider content={`${I18n.passengerInfo}`} />
-                <Text className="title">{I18n.passengerName}</Text>
-                <View className='input-container'>
-                  <Input
-                    name="passengerName"
-                    type="text"
-                    placeholder={I18n.enterPassengerName}
-                    value={firstPassenger.passengers || ""}
-                    onInput={(e) => this.handleInputChange('name', e.detail.value)}
-                  />
-                </View>
-                <Text className="title">{I18n.passengerPhone}</Text>
-                <View className='input-container phone-input-container'>
-                  <View className='country-code-picker'>
-                    <Picker
-                      mode='selector'
-                      range={['+86', '+852', '+853']}
-                      onChange={(e) => {
-                        // Extract just the numeric part from the selected value
-                        const selectedValue = ['86', '852', '853'][e.detail.value];
-                        this.handleCountryCodeChange(selectedValue);
-                      }}
-                      value={['86', '852', '853'].indexOf(countryCode)}
-                    >
-                      <View className='country-code'>
-                        +{countryCode}
-                      </View>
-                    </Picker>
-                  </View>
-                  <Input
-                    className={`phone-input ${phoneError ? 'phone-input-error' : ''}`}
-                    name="passengerTel"
-                    type="number"
-                    placeholder={I18n.enterPassengerPhone}
-                    value={firstPassenger.passengerTels || ""}
-                    onInput={(e) => {
-                      const numericValue = e.detail.value.replace(/[^0-9]/g, '');
-                      this.handleInputChange('tel', numericValue);
+          
+          {/* Always show the form without depending on firstPassenger */}
+          <View className="form-container">
+            <AtForm>
+              <AtDivider content={`${I18n.passengerInfo}`} />
+              <Text className="title">{I18n.passengerName}</Text>
+              <View className='input-container'>
+                <Input
+                  name="passengerName"
+                  type="text"
+                  placeholder={I18n.enterPassengerName}
+                  value={passengerName}
+                  onInput={(e) => this.handleInputChange('name', e.detail.value)}
+                />
+              </View>
+              <Text className="title">{I18n.passengerPhone}</Text>
+              <View className='input-container phone-input-container'>
+                <View className='country-code-picker'>
+                  <Picker
+                    mode='selector'
+                    range={['+86', '+852', '+853']}
+                    onChange={(e) => {
+                      // Extract just the numeric part from the selected value
+                      const selectedValue = ['86', '852', '853'][e.detail.value];
+                      this.handleCountryCodeChange(selectedValue);
                     }}
-                  />
+                    value={['86', '852', '853'].indexOf(countryCode)}
+                  >
+                    <View className='country-code'>
+                      +{countryCode}
+                    </View>
+                  </Picker>
                 </View>
-                {phoneError && (
-                  <Text className="error-message">
-                    {countryCode === '86' 
-                      ? '請輸入11位有效電話號碼' // Please enter a valid 11-digit phone number
-                      : '請輸入8位有效電話號碼'  // Please enter a valid 8-digit phone number
-                    }
-                  </Text>
-                )}
-              </AtForm>
-            </View>
-          )}
+                <Input
+                  className={`phone-input ${phoneError ? 'phone-input-error' : ''}`}
+                  name="passengerTel"
+                  type="number"
+                  placeholder={I18n.enterPassengerPhone}
+                  value={passengerPhone}
+                  onInput={(e) => {
+                    const numericValue = e.detail.value.replace(/[^0-9]/g, '');
+                    this.handleInputChange('tel', numericValue);
+                  }}
+                />
+              </View>
+              {phoneError && (
+                <Text className="error-message">
+                  {countryCode === '86'
+                    ? '請輸入11位有效電話號碼' // Please enter a valid 11-digit phone number
+                    : '請輸入8位有效電話號碼'  // Please enter a valid 8-digit phone number
+                  }
+                </Text>
+              )}
+            </AtForm>
+          </View>
 
           <View className='passenger-list'>
             {Object.values(ticketQuantities).flatMap(tpaEntries =>

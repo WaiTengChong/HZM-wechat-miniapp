@@ -7,6 +7,7 @@ import md5 from "md5";
 import { CancelOrderResponse } from "src/components/cancelOrderAPI";
 import { GetTicketInfoResponse } from "src/components/getTicketInfoAPI";
 import { TicketResponse } from "src/components/getTicketsAPI";
+import { GoodsDetail } from "src/components/orderDetail";
 import { GetOrderInfoResponse } from "src/components/OrderInfoAPI";
 import { ReservationResponse } from "src/components/reservationsAPI";
 import { RemoteSetting } from "../types/remoteSettings";
@@ -107,10 +108,7 @@ const createOrder = async (
   orderNo: string,
   totalPrice: string,
   description: string,
-  ticketCode: string,
-  lineBc: string,
-  routeName: string,
-  ticketTypeId: string
+  ticketData: GoodsDetail[]
 ) => {
   const OPEN_ID = Taro.getStorageSync("OPEN_ID");
   const response = await makeAPICall(CREATE_WECHAT_PAY_JSAPI, "POST", {
@@ -118,19 +116,12 @@ const createOrder = async (
       total: totalPrice, // TODO change to the total price
     },
     description: description, // Description of the product
-    goods_tag: ticketTypeId, // Tag for the bus ticket product
+    // goods_tag: ticketTypeId, // Tag for the bus ticket product
     out_trade_no: orderNo,
     detail: {
       cost_price: totalPrice, // TODO change to the total price
-      receipt_id: ticketCode, // Receipt ID for the transaction
-      goods_detail: [
-        {
-          goods_id: lineBc, // Unique ID for the bus ticket
-          goods_name: routeName, // Name of the bus ticket
-          quantity: 1, // Quantity of tickets purchased
-          price: totalPrice, // TODO change to the total price
-        },
-      ],
+      // receipt_id: ticketCode, // Receipt ID for the transaction
+      goods_detail: ticketData,
     },
     openid: OPEN_ID, // User's open ID
   });

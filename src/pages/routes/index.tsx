@@ -131,42 +131,49 @@ export default class Routes extends Component<{}, State> {
 
   loadRouteTime = async (date: string, isFirst: boolean = false) => {
     this.setState({ routeTimeLoading: true });
-    try {
-      Taro.showLoading({ title: '加載中...' });
-      const response: DepartureZL = await getDeparturesZL(
-        this.state.selectedRouteId,
-        this.state.location.find(lc => lc.cname === this.state.selectedStartLocation)?.id!,
-        this.state.location.find(lc => lc.cname === this.state.selectedEndLocation)?.id!,
-        0,
-        "",
-        date
-      );
-      if (response.run != undefined && response.run.length > 0) {
+    this.setState({ selectedTicket:{} as Ticket,
+      addedTickets: [],
+      ticketQuantities: {},
+      selectedTicketIndex: 0,
+    });
+    if (date != '') {
+      try {
+        Taro.showLoading({ title: '加載中...' });
+        const response: DepartureZL = await getDeparturesZL(
+          this.state.selectedRouteId,
+          this.state.location.find(lc => lc.cname === this.state.selectedStartLocation)?.id!,
+          this.state.location.find(lc => lc.cname === this.state.selectedEndLocation)?.id!,
+          0,
+          "",
+          date
+        );
+        if (response.run != undefined && response.run.length > 0) {
 
-        //if the date is today, only show the ticket that is after the current time
-        if (date === dayjs().format('YYYY-MM-DD')) {
-          this.setState({
-            ticketData: response.run.filter(ticket => dayjs(`${date} ${ticket.runStartTime}`).isAfter(dayjs().add(1, 'hour')))
-          });
+          //if the date is today, only show the ticket that is after the current time
+          if (date === dayjs().format('YYYY-MM-DD')) {
+            this.setState({
+              ticketData: response.run.filter(ticket => dayjs(`${date} ${ticket.runTime}`).isAfter(dayjs().add(1, 'hour')))
+            });
+          } else {
+            this.setState({
+              ticketData: response.run,
+            });
+          }
+
+          Taro.setStorageSync("ticket_date", this.state.dateSel);
+
         } else {
-          this.setState({
-            ticketData: response.run,
-          });
+          this.setState({ ticketData: [], showTicketInfo: false });
+          if (!isFirst) {
+            Taro.showToast({ title: '没有可用的车票', icon: 'none' })
+          }
         }
-
-        Taro.setStorageSync("ticket_date", this.state.dateSel);
-
-      } else {
-        this.setState({ ticketData: [], showTicketInfo: false });
-        if (!isFirst) {
-          Taro.showToast({ title: '没有可用的车票', icon: 'none' })
-        }
+      } catch (error) {
+        console.error('Error fetching route time:', error);
+      } finally {
+        Taro.hideLoading();
+        this.setState({ routeTimeLoading: false });
       }
-    } catch (error) {
-      console.error('Error fetching route time:', error);
-    } finally {
-      Taro.hideLoading();
-      this.setState({ routeTimeLoading: false });
     }
   }
 
@@ -228,6 +235,19 @@ export default class Routes extends Component<{}, State> {
     }, this.onChangeSelectedRoute);
   };
 
+  resetSelected = () => {
+    console.log('resetSelected');
+    this.setState({
+      addedTickets: [],
+      ticketQuantities: {},
+      selectedTicketIndex: 0,
+      selectedTicket: {} as Ticket,
+      ticketData: [],
+      showTicketInfo: false,
+      isCheckBoxClicked: false,
+    });
+  }
+
   handleReset = () => {
     this.setState({
       selectedStartArea: '',
@@ -266,6 +286,7 @@ export default class Routes extends Component<{}, State> {
   }
 
   onStartLoaciontChange = (e: any) => {
+    this.resetSelected();
     this.setState({
       selectedStartLocationIndex: e.detail.value,
       selectedStartLocation: this.state.startLocations[e.detail.value].cname,
@@ -276,6 +297,7 @@ export default class Routes extends Component<{}, State> {
   }
 
   onEndLoaciontChange = (e: any) => {
+    this.resetSelected();
     this.setState({
       selectedEndLocationIndex: e.detail.value,
       selectedEndLocation: this.state.endLocations[e.detail.value].cname,
@@ -287,7 +309,7 @@ export default class Routes extends Component<{}, State> {
 
   // Handle date changes
   onDateChange = async (e: any) => {
-    await this.setState({
+    this.setState({
       dateSel: e.value, // Use e.date for date input
       selectedTicketIndex: 0,
       selectedTicket: {} as Ticket,
@@ -296,6 +318,12 @@ export default class Routes extends Component<{}, State> {
   };
 
   onTicketChange = async (e: any) => {
+    this.setState({
+      selectedTicket: {} as Ticket,
+      addedTickets: [],
+      ticketQuantities: {},
+      selectedTicketIndex: 0,
+    });
     const index = parseInt(e.detail.value);
     const selectedTicket = this.state.ticketData![index];
     await this.setState({
@@ -576,7 +604,7 @@ export default class Routes extends Component<{}, State> {
                     <>
                       <Picker
                         mode='selector'
-                        range={ticketData?.map(ticket => ticket.runStartTime)}
+                        range={ticketData?.map(ticket => ticket.runTime.substring(0, 5))}
                         onChange={this.onTicketChange}
                         value={selectedTicketIndex}
                         disabled={this.state.routeTimeLoading || ticketData.length === 0}
@@ -585,7 +613,7 @@ export default class Routes extends Component<{}, State> {
                           <AtListItem
                             className={`ticketTime ${ticketData.length === 0 ? 'error' : ''}`}
                             title={I18n.scheduleTime}
-                            extraText={ticketData.length === 0 ? I18n.pleaseSelectNewDate : selectedTicket?.runStartTime || I18n.pleaseSelect}
+                            extraText={ticketData.length === 0 ? I18n.pleaseSelectNewDate : (selectedTicket && selectedTicket.runTime ? selectedTicket.runTime.substring(0, 5) : I18n.pleaseSelect)}
                             arrow={ticketData.length === 0 ? undefined : 'down'}
                           />
                         </AtList>

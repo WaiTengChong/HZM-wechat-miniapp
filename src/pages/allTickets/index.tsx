@@ -213,7 +213,7 @@ export default class TicketListPage extends Component<{}, State> {
                                                     <Text>{I18n.ticketNumber}：{detail.ticketCode}</Text>
                                                 </View>
 
-                                                {this.renderQRCode(detail.takeTicketCode)}
+                                                {this.renderQRCode(detail.ticketCode)}
                                                 <View className='apiLogo-container'>
                                                     <Image className='apiLogo' src={apiLogo} />
                                                     <Text className='early-arrival'>{I18n.earlyArrival}</Text>
@@ -272,7 +272,7 @@ export default class TicketListPage extends Component<{}, State> {
                                                     <Text>{I18n.ticketNumber}：{order.orderDetailLst.ticketCode}</Text>
                                                 </View>
 
-                                                    {this.renderQRCode(order.orderDetailLst.takeTicketCode)}
+                                                    {this.renderQRCode(order.orderDetailLst.ticketCode)}
                                                     <View className='apiLogo-container'>
                                                         <Image className='apiLogo' src={apiLogo} />
                                                         <Text className='early-arrival'>{I18n.earlyArrival}</Text>

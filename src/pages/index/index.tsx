@@ -35,6 +35,37 @@ export default class Index extends Component<PropsWithChildren, State> {
       Taro.hideHomeButton();
     }, 100);
 
+    // Check for app updates
+    if (Taro.canIUse('getUpdateManager')) {
+      const updateManager = Taro.getUpdateManager();
+      
+      updateManager.onCheckForUpdate(function (res) {
+        // Callback after checking for new version
+        console.log('Has update:', res.hasUpdate);
+      });
+      
+      updateManager.onUpdateReady(function () {
+        Taro.showModal({
+          title: I18n.updateTitle,
+          content: I18n.updateContent,
+          success(res) {
+            if (res.confirm) {
+              // Apply the new version and restart
+              updateManager.applyUpdate();
+            }
+          }
+        });
+      });
+      
+      updateManager.onUpdateFailed(function () {
+        // New version download failed
+        Taro.showToast({
+          title: I18n.updateFailed,
+          icon: 'none'
+        });
+      });
+    }
+
     await RemoteSettingsService.getInstance().initialize().then(() => {
       this.getBanner();
     });
@@ -233,7 +264,7 @@ export default class Index extends Component<PropsWithChildren, State> {
                   {I18n.logout}
                 </Text>
                 <Text className='version-text'>
-                  0.1.5
+                  0.1.6
                 </Text>
               </View>
             )}

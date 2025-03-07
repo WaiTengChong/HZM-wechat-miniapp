@@ -3,7 +3,7 @@
   "projectname": "myApp",
   "setting": {
     "compileHotReLoad": true,
-    "urlCheck": true,
+    "urlCheck": false,
     "preloadBackgroundData": false,
     "bigPackageSizeSupport": true
   }

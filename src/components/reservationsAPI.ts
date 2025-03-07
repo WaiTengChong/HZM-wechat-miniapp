@@ -5,7 +5,7 @@ export interface ReservationResponse {
   errorMsg: string;
   msg: string;
   orderCost: string;
-  orderDetailLst: OrderDetail;
+  orderDetailLst: OrderDetail[] | OrderDetail;
   orderNo: string;
   orderPrice: string;
   orderTime: string;

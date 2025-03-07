@@ -15,6 +15,10 @@ export const I18n = new LocalizedStrings({
     customerService: "客服中心",
     locationInfo: "站点信息",
     loading: "加载中",
+    // Update manager translations
+    updateTitle: "更新提示",
+    updateContent: "新版本已经准备好，是否重启应用？",
+    updateFailed: "更新失败，请稍后再试",
     // Routes page translations
     route: "路线",
     routeDesc: "出发地和目的地",
@@ -129,6 +133,10 @@ export const I18n = new LocalizedStrings({
     customerService: "客服中心",
     locationInfo: "站點資訊",
     loading: "加載中",
+    // Update manager translations
+    updateTitle: "更新提示",
+    updateContent: "新版本已經準備好，是否重啟應用？",
+    updateFailed: "更新失敗，請稍後再試",
     // Routes page translations
     route: "路線",
     routeDesc: "出發地和目的地",
