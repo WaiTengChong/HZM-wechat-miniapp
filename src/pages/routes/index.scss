@@ -197,3 +197,48 @@
     margin:0;
   }
 }
+
+.highlighted-checkbox {
+  animation: pulse 3s ease-in-out;
+
+  .at-checkbox__option {
+    .at-checkbox__title {
+      color: #e60012 !important;
+      transition: color 0.1s ease;
+    }
+  }
+}
+
+.highlighted-ticket {
+  animation: pulse 3s ease-in-out;
+
+  .item-content__info-title {
+    color: #e60012 !important;
+    transition: color 0.1s ease;
+  }
+  
+  .at-list-item .item-content {
+    .item-content__info-title {
+      font-weight: bold;
+      color: #e60012 !important;
+    }
+  }
+}
+
+@keyframes pulse {
+  0% {
+    transform: scale(1);
+  }
+  20% {
+    transform: scale(1.05); 
+  }
+  40% {
+    transform: scale(1);
+  }
+  60% {
+    transform: scale(1.05);
+  }
+  80% {
+    transform: scale(1);
+  }
+}

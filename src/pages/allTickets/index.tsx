@@ -1,8 +1,8 @@
 import { Image, Text, View } from '@tarojs/components';
 import Taro from '@tarojs/taro';
 import { Component } from 'react';
-import { GetOrderInfoResponse } from 'src/components/OrderInfoAPI';
-import { AtAccordion, AtActivityIndicator, AtCard, AtDivider, AtList } from 'taro-ui';
+import { GetOrderInfoResponse, OrderDetail } from 'src/components/OrderInfoAPI';
+import { AtAccordion, AtActivityIndicator, AtCard, AtDivider, AtIcon, AtList } from 'taro-ui';
 import apiLogo from '../../../src/image/apiLogo.png';
 import logo from '../../../src/image/logo-no.png';
 import { getOrderInfo, getOrderList } from '../../api/api';
@@ -37,9 +37,20 @@ export default class TicketListPage extends Component<{}, State> {
         openAccordions: {},
     };
 
+    openMap = (latitude: string, longitude: string, address: string, name: string) => {
+
+        Taro.openLocation({
+            latitude: parseFloat(latitude),
+            longitude: parseFloat(longitude),
+            name: name,
+            address: address,
+        });
+    }
+
+
     handleClick = async (orderNo: string) => {
         const { orderList, openAccordions, loadingOrders } = this.state;
-        
+
         // Toggle accordion state
         const newOpenState = !openAccordions[orderNo];
         this.setState(prevState => ({
@@ -109,8 +120,8 @@ export default class TicketListPage extends Component<{}, State> {
     }
 
     isSingleOrderDetail = (orderDetailLst: any): orderDetailLst is OrderDetailItem => {
-        return !Array.isArray(orderDetailLst) && 
-            typeof orderDetailLst === 'object' && 
+        return !Array.isArray(orderDetailLst) &&
+            typeof orderDetailLst === 'object' &&
             'cost' in orderDetailLst &&
             'runTime' in orderDetailLst &&
             'depatureOriginName' in orderDetailLst &&
@@ -118,7 +129,11 @@ export default class TicketListPage extends Component<{}, State> {
             'onAddress' in orderDetailLst &&
             'offAddress' in orderDetailLst &&
             'ticketCode' in orderDetailLst &&
-            'runDate' in orderDetailLst;
+            'runDate' in orderDetailLst &&
+            'onLat' in orderDetailLst &&
+            'onLong' in orderDetailLst &&
+            'offLat' in orderDetailLst &&
+            'offLong' in orderDetailLst;
     }
 
     handleQRCodeClick = (ticketCode: string) => {
@@ -161,7 +176,7 @@ export default class TicketListPage extends Component<{}, State> {
 
         return (
             <View className='container'>
-                <AtDivider content={I18n.myTickets}/>
+                <AtDivider content={I18n.myTickets} />
                 {orderNoList.map((orderNo) => {
                     const order = orderList[orderNo];
                     const isLoading = loadingOrders[orderNo];
@@ -182,7 +197,7 @@ export default class TicketListPage extends Component<{}, State> {
                                 </View>
                             ) : order && (
                                 <AtList>
-                                    {Array.isArray(order.orderDetailLst) ? 
+                                    {Array.isArray(order.orderDetailLst) ?
                                         order.orderDetailLst.map((detail, index) => (
                                             <AtCard
                                                 key={`${orderNo}-${index}`}
@@ -196,7 +211,7 @@ export default class TicketListPage extends Component<{}, State> {
                                                         <Text className='service-hotline'>(86)4008822322</Text>
                                                     </View>
                                                 </View>
-                                                
+
                                                 <View className='ticket-cost'>
                                                     <Text>{I18n.orderCost}：${this.formatPrice(detail.cost)}</Text>
                                                 </View>
@@ -205,12 +220,19 @@ export default class TicketListPage extends Component<{}, State> {
                                                     <Text className='run-time'>{I18n.departureDate}：{detail.runDate}</Text>
                                                     <Text className='run-time'>{I18n.departureTime}：{detail.runTime}</Text>
                                                     <Text className='route-text'>{detail.depatureOriginName} → {detail.depatureDestinatName}</Text>
-                                                    <Text className='on-board-text'><Text style={{fontWeight: 'bold'}}>{I18n.departure}：</Text>{'\n'}{detail.onAddress}</Text>
-                                                    <Text className='off-board-text'><Text style={{fontWeight: 'bold'}}>{I18n.destination}：</Text>{'\n'}{detail.offAddress}</Text>
+                                                    <View className='board-container' onClick={() => this.openMap(detail.onLat, detail.onLong, detail.onAddress, detail.depatureDestinatName)}>
+                                                        <Text className='on-board-text'><Text style={{ fontWeight: 'bold' }}>{I18n.departure}：</Text>{'\n'}{detail.onAddress}</Text>
+                                                        <AtIcon className='map-pin' value='map-pin' size='30' color='red' />
+                                                    </View>
+                                                    <View className='board-container' onClick={() => this.openMap(detail.offLat, detail.offLong, detail.offAddress, detail.depatureDestinatName)}>
+                                                        <Text className='off-board-text'><Text style={{ fontWeight: 'bold' }}>{I18n.destination}：</Text>{'\n'}{detail.offAddress}</Text>
+                                                        <AtIcon className='map-pin' value='map-pin' size='30' color='red' />
+                                                    </View>
                                                 </View>
 
                                                 <View className='ticket-info'>
                                                     <Text>{I18n.ticketNumber}：{detail.ticketCode}</Text>
+
                                                 </View>
 
                                                 {this.renderQRCode(detail.ticketCode)}
@@ -218,29 +240,29 @@ export default class TicketListPage extends Component<{}, State> {
                                                     <Image className='apiLogo' src={apiLogo} />
                                                     <Text className='early-arrival'>{I18n.earlyArrival}</Text>
                                                 </View>
-                                                
-                                                    <View className='ticket-footer'>
-                                                        <AtDivider content={I18n.luggagePolicy} />
 
-                                                        <View className='page-info'>
-                                                            <AtList hasBorder={false}>{I18n.luggageWelcome}</AtList>
-                                                            <AtList hasBorder={false}>{I18n.luggagePolicy1}</AtList>
-                                                            <AtList hasBorder={false}>{I18n.luggagePolicy2}</AtList>
-                                                            <AtList hasBorder={false}>{I18n.luggagePolicy3}</AtList>
-                                                            <AtList hasBorder={false}>{I18n.luggagePolicy4}</AtList>
-                                                            <AtList hasBorder={false}>{I18n.luggagePolicy5}</AtList>
-                                                            <AtList hasBorder={false}>{I18n.luggagePolicy6}</AtList>
-                                                            <AtList hasBorder={false} className='luggage-padding'>{I18n.luggageSizeA}</AtList>
-                                                            <AtList hasBorder={false} className='luggage-padding'>{I18n.luggageSizeB}</AtList>
-                                                            <AtList hasBorder={false} className='luggage-padding'>{I18n.luggageSizeC}</AtList>
-                                                            <AtList hasBorder={false}>{I18n.luggagePolicy7}</AtList>
-                                                            <AtList hasBorder={false} className='luggage-padding'>{I18n.luggageCheckTime}</AtList>
-                                                            <AtList hasBorder={false}>{I18n.luggagePolicy8}</AtList>
-                                                            <AtList hasBorder={false}>{I18n.luggagePolicy9}</AtList>
-                                                            <AtList hasBorder={false}>{I18n.luggagePolicy10}</AtList>
-                                                            <AtList hasBorder={false}>{I18n.luggagePolicy11}</AtList>
-                                                        </View>
+                                                <View className='ticket-footer'>
+                                                    <AtDivider content={I18n.luggagePolicy} />
+
+                                                    <View className='page-info'>
+                                                        <AtList hasBorder={false}>{I18n.luggageWelcome}</AtList>
+                                                        <AtList hasBorder={false}>{I18n.luggagePolicy1}</AtList>
+                                                        <AtList hasBorder={false}>{I18n.luggagePolicy2}</AtList>
+                                                        <AtList hasBorder={false}>{I18n.luggagePolicy3}</AtList>
+                                                        <AtList hasBorder={false}>{I18n.luggagePolicy4}</AtList>
+                                                        <AtList hasBorder={false}>{I18n.luggagePolicy5}</AtList>
+                                                        <AtList hasBorder={false}>{I18n.luggagePolicy6}</AtList>
+                                                        <AtList hasBorder={false} className='luggage-padding'>{I18n.luggageSizeA}</AtList>
+                                                        <AtList hasBorder={false} className='luggage-padding'>{I18n.luggageSizeB}</AtList>
+                                                        <AtList hasBorder={false} className='luggage-padding'>{I18n.luggageSizeC}</AtList>
+                                                        <AtList hasBorder={false}>{I18n.luggagePolicy7}</AtList>
+                                                        <AtList hasBorder={false} className='luggage-padding'>{I18n.luggageCheckTime}</AtList>
+                                                        <AtList hasBorder={false}>{I18n.luggagePolicy8}</AtList>
+                                                        <AtList hasBorder={false}>{I18n.luggagePolicy9}</AtList>
+                                                        <AtList hasBorder={false}>{I18n.luggagePolicy10}</AtList>
+                                                        <AtList hasBorder={false}>{I18n.luggagePolicy11}</AtList>
                                                     </View>
+                                                </View>
                                             </AtCard>
                                         )) : this.isSingleOrderDetail(order.orderDetailLst) && (
                                             <AtCard
@@ -255,7 +277,7 @@ export default class TicketListPage extends Component<{}, State> {
                                                         <Text className='service-hotline'>(86)4008822322</Text>
                                                     </View>
                                                 </View>
-                                                
+
                                                 <View className='ticket-cost'>
                                                     <Text>{I18n.orderCost}：${this.formatPrice(order.orderDetailLst.cost)}</Text>
                                                 </View>
@@ -264,40 +286,46 @@ export default class TicketListPage extends Component<{}, State> {
                                                     <Text className='run-time'>{I18n.departureTime}：{order.orderDetailLst.runTime}</Text>
                                                     <Text className='run-time'>{I18n.departureDate}：{order.orderDetailLst.runDate}</Text>
                                                     <Text className='route-text'>{order.orderDetailLst.depatureOriginName} → {order.orderDetailLst.depatureDestinatName}</Text>
-                                                    <Text className='on-board-text'><Text style={{fontWeight: 'bold'}}>{I18n.departure}：</Text>{'\n'}{order.orderDetailLst.onAddress}</Text>
-                                                    <Text className='off-board-text'><Text style={{fontWeight: 'bold'}}>{I18n.destination}：</Text>{'\n'}{order.orderDetailLst.offAddress}</Text>
+                                                    <View className='board-container' onClick={() => this.openMap((order.orderDetailLst as OrderDetail).onLat, (order.orderDetailLst as OrderDetail).onLong, (order.orderDetailLst as OrderDetail).onAddress, (order.orderDetailLst as OrderDetail).depatureDestinatName)}>
+                                                        <Text className='on-board-text'><Text style={{ fontWeight: 'bold' }}>{I18n.departure}：</Text>{'\n'}{order.orderDetailLst.onAddress}</Text>
+                                                        <AtIcon className='map-pin' value='map-pin' size='30' color='red' />
+                                                    </View>
+                                                    <View className='board-container' onClick={() => this.openMap((order.orderDetailLst as OrderDetail).offLat, (order.orderDetailLst as OrderDetail).offLong, (order.orderDetailLst as OrderDetail).offAddress, (order.orderDetailLst as OrderDetail).depatureDestinatName)}>
+                                                        <Text className='off-board-text'><Text style={{ fontWeight: 'bold' }}>{I18n.destination}：</Text>{'\n'}{order.orderDetailLst.offAddress}</Text>
+                                                        <AtIcon className='map-pin' value='map-pin' size='30' color='red' />
+                                                    </View>
                                                 </View>
 
                                                 <View className='ticket-info'>
                                                     <Text>{I18n.ticketNumber}：{order.orderDetailLst.ticketCode}</Text>
                                                 </View>
 
-                                                    {this.renderQRCode(order.orderDetailLst.ticketCode)}
-                                                    <View className='apiLogo-container'>
-                                                        <Image className='apiLogo' src={apiLogo} />
-                                                        <Text className='early-arrival'>{I18n.earlyArrival}</Text>
-                                                    </View>
+                                                {this.renderQRCode(order.orderDetailLst.ticketCode)}
+                                                <View className='apiLogo-container'>
+                                                    <Image className='apiLogo' src={apiLogo} />
+                                                    <Text className='early-arrival'>{I18n.earlyArrival}</Text>
+                                                </View>
                                                 <View className='ticket-footer'>
-                                                        <AtDivider content={I18n.luggagePolicy} />
+                                                    <AtDivider content={I18n.luggagePolicy} />
 
-                                                        <View className='page-info'>
-                                                            <AtList hasBorder={false}>{I18n.luggageWelcome}</AtList>
-                                                            <AtList hasBorder={false}>{I18n.luggagePolicy1}</AtList>
-                                                            <AtList hasBorder={false}>{I18n.luggagePolicy2}</AtList>
-                                                            <AtList hasBorder={false}>{I18n.luggagePolicy3}</AtList>
-                                                            <AtList hasBorder={false}>{I18n.luggagePolicy4}</AtList>
-                                                            <AtList hasBorder={false}>{I18n.luggagePolicy5}</AtList>
-                                                            <AtList hasBorder={false}>{I18n.luggagePolicy6}</AtList>
-                                                            <AtList hasBorder={false} className='luggage-padding'>{I18n.luggageSizeA}</AtList>
-                                                            <AtList hasBorder={false} className='luggage-padding'>{I18n.luggageSizeB}</AtList>
-                                                            <AtList hasBorder={false} className='luggage-padding'>{I18n.luggageSizeC}</AtList>
-                                                            <AtList hasBorder={false}>{I18n.luggagePolicy7}</AtList>
-                                                            <AtList hasBorder={false} className='luggage-padding'>{I18n.luggageCheckTime}</AtList>
-                                                            <AtList hasBorder={false}>{I18n.luggagePolicy8}</AtList>
-                                                            <AtList hasBorder={false}>{I18n.luggagePolicy9}</AtList>
-                                                            <AtList hasBorder={false}>{I18n.luggagePolicy10}</AtList>
-                                                            <AtList hasBorder={false}>{I18n.luggagePolicy11}</AtList>
-                                                        </View>
+                                                    <View className='page-info'>
+                                                        <AtList hasBorder={false}>{I18n.luggageWelcome}</AtList>
+                                                        <AtList hasBorder={false}>{I18n.luggagePolicy1}</AtList>
+                                                        <AtList hasBorder={false}>{I18n.luggagePolicy2}</AtList>
+                                                        <AtList hasBorder={false}>{I18n.luggagePolicy3}</AtList>
+                                                        <AtList hasBorder={false}>{I18n.luggagePolicy4}</AtList>
+                                                        <AtList hasBorder={false}>{I18n.luggagePolicy5}</AtList>
+                                                        <AtList hasBorder={false}>{I18n.luggagePolicy6}</AtList>
+                                                        <AtList hasBorder={false} className='luggage-padding'>{I18n.luggageSizeA}</AtList>
+                                                        <AtList hasBorder={false} className='luggage-padding'>{I18n.luggageSizeB}</AtList>
+                                                        <AtList hasBorder={false} className='luggage-padding'>{I18n.luggageSizeC}</AtList>
+                                                        <AtList hasBorder={false}>{I18n.luggagePolicy7}</AtList>
+                                                        <AtList hasBorder={false} className='luggage-padding'>{I18n.luggageCheckTime}</AtList>
+                                                        <AtList hasBorder={false}>{I18n.luggagePolicy8}</AtList>
+                                                        <AtList hasBorder={false}>{I18n.luggagePolicy9}</AtList>
+                                                        <AtList hasBorder={false}>{I18n.luggagePolicy10}</AtList>
+                                                        <AtList hasBorder={false}>{I18n.luggagePolicy11}</AtList>
+                                                    </View>
                                                 </View>
                                             </AtCard>
                                         )

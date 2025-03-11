@@ -74,6 +74,10 @@ interface State {
   selectedEndLocationAddress: string;
   selectedStartLocationIndex: number;
   selectedEndLocationIndex: number;
+  selectedStartLocationLatitude: string;
+  selectedStartLocationLongitude: string;
+  selectedEndLocationLatitude: string;
+  selectedEndLocationLongitude: string;
   startLocations: Location[];
   endLocations: Location[];
   selectedStartArea: string;
@@ -86,6 +90,8 @@ interface State {
   routeTimeLoading: boolean;
   checkboxOption: { value; label; desc }[];
   isCheckBoxClicked: boolean;
+  isCheckboxHighlighted: boolean;
+  isTicketHighlighted: boolean;
   ticketQuantities: {
     [ticketId: string]: {
       [tpaId: string]: {

@@ -1,12 +1,11 @@
 import { Image, Text, View } from '@tarojs/components';
 import Taro from "@tarojs/taro";
 import React from "react";
-import { CancelOrderResponse } from 'src/components/cancelOrderAPI';
 import { GetTicketInfoResponse } from 'src/components/getTicketInfoAPI';
 import { TicketResponse } from 'src/components/getTicketsAPI';
 import { GetOrderInfoResponse } from 'src/components/OrderInfoAPI';
 import { AtButton, AtCard, AtDivider, AtIcon, AtList } from "taro-ui";
-import { cancelOrder, getOrderInfo, getTicketInfo } from '../../api/api'; // Import the API method
+import { getOrderInfo, getTicketInfo } from '../../api/api'; // Import the API method
 import { I18n } from '../../I18n';
 import "./index.scss";
 
@@ -31,13 +30,7 @@ interface OrderDetailState {
 
 export default class OrderDetail extends React.Component<{}, OrderDetailState> {
   // Update page configuration to disable back button
-  config = {
-    navigationBarTitleText: '',
-    enablePullDownRefresh: false,
-    disableScroll: false,
-    navigationBarBackButton: false,
-    navigationStyle: 'custom'
-  }
+
 
   state: OrderDetailState = {
     tickets: []
@@ -46,9 +39,8 @@ export default class OrderDetail extends React.Component<{}, OrderDetailState> {
   componentDidMount() {
     const orderDetailLst = Taro.getStorageSync("ticket");
     const apiResponses: TicketResponse[] = Array.isArray(orderDetailLst) ? orderDetailLst : [orderDetailLst];
-
     console.log("apiResponses", apiResponses);
-
+    Taro.hideHomeButton();
     if (!apiResponses?.length) {
       Taro.showToast({ title: I18n.noTicketInfo, icon: 'none', duration: 2000 });
       return;
@@ -75,19 +67,6 @@ export default class OrderDetail extends React.Component<{}, OrderDetailState> {
 
     this.setState({ tickets });
   }
-
-  handleCancelOrder = async (orderNo: string) => {
-    const response: CancelOrderResponse = await cancelOrder(orderNo);
-    if (response.errorCode === "SUCCESS") {
-      Taro.showToast({ title: I18n.orderCancelled, icon: "success", duration: 2000 });
-      // Remove the cancelled ticket from state
-      this.setState(prevState => ({
-        tickets: prevState.tickets.filter(ticket => ticket.orderNo !== orderNo)
-      }));
-    } else {
-      Taro.showToast({ title: response.errorMsg || I18n.cancelOrderFailed, icon: 'none', duration: 2000 });
-    }
-  };
 
   handleOrderInfo = async (orderNo: string) => {
     const response: GetOrderInfoResponse = await getOrderInfo(orderNo);
@@ -159,6 +138,9 @@ export default class OrderDetail extends React.Component<{}, OrderDetailState> {
             <View className='order-success-container'>
               <Text className='order-success-text'>{I18n.orderSuccess}</Text>
               <AtIcon value='check-circle' size='70' color='#008000' />
+            </View>
+            <View className='order-check-container'>
+              <Text className='order-check-text'>{I18n.orderCheckViewText}</Text>
             </View>
             <AtCard
               title={`${I18n.orderNumber}: ${ticket.orderNo}`}

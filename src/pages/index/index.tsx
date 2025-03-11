@@ -38,12 +38,12 @@ export default class Index extends Component<PropsWithChildren, State> {
     // Check for app updates
     if (Taro.canIUse('getUpdateManager')) {
       const updateManager = Taro.getUpdateManager();
-      
+
       updateManager.onCheckForUpdate(function (res) {
         // Callback after checking for new version
         console.log('Has update:', res.hasUpdate);
       });
-      
+
       updateManager.onUpdateReady(function () {
         Taro.showModal({
           title: I18n.updateTitle,
@@ -56,7 +56,7 @@ export default class Index extends Component<PropsWithChildren, State> {
           }
         });
       });
-      
+
       updateManager.onUpdateFailed(function () {
         // New version download failed
         Taro.showToast({
@@ -263,11 +263,14 @@ export default class Index extends Component<PropsWithChildren, State> {
                 >
                   {I18n.logout}
                 </Text>
-                <Text className='version-text'>
-                  0.1.6
-                </Text>
+
               </View>
             )}
+            <View className='version-container'>
+              <Text className='version-text'>
+                0.1.8
+              </Text>
+            </View>
 
           </View>
         </View>

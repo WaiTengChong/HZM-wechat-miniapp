@@ -76,13 +76,14 @@ export const I18n = new LocalizedStrings({
     onlineCustomerSupport: "在线客服支持",
     connectingCustomerService: "正在连接客服...",
     contactCustomerService: "联系客服",
-    serviceHours: "工作时间：周一至周五 9:00-18:00",
+    serviceHours: "工作时间：周一至周日 9:00-22:00",
     customerServiceConnectSuccess: "成功开启客服会话",
     customerServiceConnectFail: "开启客服会话失败",
     ticketNotFound: "未找到车票信息",
     discount: "折",
     discountPrice: "折后价",
     orderNumber: "订单号",
+    orderCheckViewText: "可以到主页我的订单查看",
     // Luggage policy translations,
     luggagePolicy: "豪华轿车注意事项",
     luggageWelcome:
@@ -115,7 +116,7 @@ export const I18n = new LocalizedStrings({
       "11.	如因非人力可控情况（如台风、恶劣天气或水浸等等）班次取消，客人可于7天内免费退改车票",
     checkBoxText:
       "「本人已详细阅读并同意上述所有服务条款，包括购票规定、行李限制、证件要求及退改政策等内容，并同意遵守相关规定。」",
-    pleaseAgreeToTerms: "请同意行李政策",
+    pleaseAgreeToTerms: "请同意购票政策",
     earlyArrival:
       "旅客须于最少于发车前15分钟，凭QR Code到上车点售票处换取车票。",
     orderSuccess: "订票成功",
@@ -195,13 +196,14 @@ export const I18n = new LocalizedStrings({
     onlineCustomerSupport: "線上客服支援",
     connectingCustomerService: "正在連接客服...",
     contactCustomerService: "聯繫客服",
-    serviceHours: "工作時間：週一至週五 9:00-18:00",
+    serviceHours: "工作時間：週一至週日 9:00-22:00",
     customerServiceConnectSuccess: "成功開啟客服會話",
     customerServiceConnectFail: "開啟客服會話失敗",
     ticketNotFound: "未找到車票信息",
     discountPrice: "折後價",
     discount: "折",
-    // Luggage policy translations
+    orderCheckViewText: "可以到主頁我的訂單查看",
+    // Luggage policy translations,
     luggagePolicy: "豪華轎車注意事項",
     luggageWelcome:
       "乘客您好！歡迎您乘坐我司豪華轎車，請您在乘車前認真閱讀以下注意事項：",
@@ -233,7 +235,7 @@ export const I18n = new LocalizedStrings({
       "11.	如因非人力可控情況（如颱風、惡劣天氣或水浸等等）班次取消，客人可於7天內免費退改車票",
     checkBoxText:
       "「本人已詳細閱讀並同意上述所有服務條款，包括購票規定、行李限制、證件要求及退改政策等內容，並同意遵守相關規定。」",
-    pleaseAgreeToTerms: "請同意行李政策",
+    pleaseAgreeToTerms: "請同意購票政策",
     earlyArrival:
       "旅客須於最少於發車前15分鐘，憑QR Code到上車點售票處換取車票。",
     orderSuccess: "訂票成功",

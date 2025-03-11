@@ -32,6 +32,10 @@ export default class Routes extends Component<{}, State> {
     selectedEndLocation: '',
     selectedStartLocationAddress: '',
     selectedEndLocationAddress: '',
+    selectedStartLocationLatitude: '',
+    selectedStartLocationLongitude: '',
+    selectedEndLocationLatitude: '',
+    selectedEndLocationLongitude: '',
     selectedStartLocationIndex: 0,
     selectedEndLocationIndex: 0,
     selectedStartArea: '',
@@ -48,6 +52,8 @@ export default class Routes extends Component<{}, State> {
       desc: '',
     }],
     isCheckBoxClicked: false,
+    isCheckboxHighlighted: false,
+    isTicketHighlighted: false,
     ticketQuantities: {},
     addedTickets: [],
     routeIdDiscountID: [],
@@ -131,7 +137,8 @@ export default class Routes extends Component<{}, State> {
 
   loadRouteTime = async (date: string, isFirst: boolean = false) => {
     this.setState({ routeTimeLoading: true });
-    this.setState({ selectedTicket:{} as Ticket,
+    this.setState({
+      selectedTicket: {} as Ticket,
       addedTickets: [],
       ticketQuantities: {},
       selectedTicketIndex: 0,
@@ -193,6 +200,7 @@ export default class Routes extends Component<{}, State> {
       stepCurrent: 1,
       selectedStartArea: this.state.route[selectedIndex].fromCityCName,
       selectedEndArea: this.state.route[selectedIndex].toCityCName,
+
     });
 
     try {
@@ -208,7 +216,18 @@ export default class Routes extends Component<{}, State> {
         selectedEndLocation: response.locations.filter(lc => lc.on === "false")[0].cname,
         selectedStartLocationAddress: response.locations.filter(lc => lc.on === "true")[0].address,
         selectedEndLocationAddress: response.locations.filter(lc => lc.on === "false")[0].address,
+        selectedStartLocationLatitude: response.locations.filter(lc => lc.on === "true")[0].lat,
+        selectedStartLocationLongitude: response.locations.filter(lc => lc.on === "true")[0].lon,
+        selectedEndLocationLatitude: response.locations.filter(lc => lc.on === "false")[0].depature_lat,
+        selectedEndLocationLongitude: response.locations.filter(lc => lc.on === "false")[0].destination_long,
+        selectedStartLocationIndex: 0,
+        selectedEndLocationIndex: 0,
       });
+
+      Taro.setStorageSync('onLat', response.locations.filter(lc => lc.on === "true")[0].lat);
+      Taro.setStorageSync('onLong', response.locations.filter(lc => lc.on === "true")[0].lon);
+      Taro.setStorageSync('offLat', response.locations.filter(lc => lc.on === "false")[0].depature_lat);
+      Taro.setStorageSync('offLong', response.locations.filter(lc => lc.on === "false")[0].destination_long);
       //await this.loadRouteTime(this.state.dateSel,true);
       this.setLoading(false);
     } catch (error) {
@@ -290,9 +309,13 @@ export default class Routes extends Component<{}, State> {
     this.setState({
       selectedStartLocationIndex: e.detail.value,
       selectedStartLocation: this.state.startLocations[e.detail.value].cname,
-      selectedStartLocationAddress: this.state.startLocations[e.detail.value].address
+      selectedStartLocationAddress: this.state.startLocations[e.detail.value].address,
+      selectedStartLocationLatitude: this.state.startLocations[e.detail.value].lat,
+      selectedStartLocationLongitude: this.state.startLocations[e.detail.value].lon
     }, async () => {
       await this.loadRouteTime(this.state.dateSel);
+      Taro.setStorageSync('onLat', this.state.startLocations[e.detail.value].lat);
+      Taro.setStorageSync('onLong', this.state.startLocations[e.detail.value].lon);
     });
   }
 
@@ -301,9 +324,13 @@ export default class Routes extends Component<{}, State> {
     this.setState({
       selectedEndLocationIndex: e.detail.value,
       selectedEndLocation: this.state.endLocations[e.detail.value].cname,
-      selectedEndLocationAddress: this.state.endLocations[e.detail.value].address
+      selectedEndLocationAddress: this.state.endLocations[e.detail.value].address,
+      selectedEndLocationLatitude: this.state.endLocations[e.detail.value].depature_lat,
+      selectedEndLocationLongitude: this.state.endLocations[e.detail.value].destination_long
     }, async () => {
       await this.loadRouteTime(this.state.dateSel);
+      Taro.setStorageSync('offLat', this.state.endLocations[e.detail.value].depature_lat);
+      Taro.setStorageSync('offLong', this.state.endLocations[e.detail.value].destination_long);
     })
   }
 
@@ -339,20 +366,55 @@ export default class Routes extends Component<{}, State> {
   handleConfirmSelection = () => {
     const { selectedTicket, isCheckBoxClicked } = this.state;
     if (!selectedTicket || this.state.addedTickets.length === 0) {
+      // Set the ticket items to highlighted
+      this.setState({ isTicketHighlighted: true });
+      
+      // Show the toast
       Taro.showToast({
         title: I18n.pleaseSelectTicket,
         icon: 'none',
         duration: 2000
       });
+      
+      // Scroll to the ticket section
+      setTimeout(() => {
+        Taro.createSelectorQuery()
+          .select('.at-checkbox')
+          .boundingClientRect()
+          .exec((res) => {
+            if (Array.isArray(res) && res[0]) {
+              Taro.pageScrollTo({
+                scrollTop: res[0].bottom,
+                duration: 300
+              });
+            }
+          });
+      }, 100);
+
+      // Reset highlight after 3 seconds
+      setTimeout(() => {
+        this.setState({ isTicketHighlighted: false });
+      }, 3000);
+      
       return;
     }
 
     if (!isCheckBoxClicked) {
+      // Set the checkbox to highlighted
+      this.setState({ isCheckboxHighlighted: true });
+      
+      // Show the toast
       Taro.showToast({
         title: I18n.pleaseAgreeToTerms,
         icon: 'none',
         duration: 2000
       });
+
+      // Reset highlight after 3 seconds
+      setTimeout(() => {
+        this.setState({ isCheckboxHighlighted: false });
+      }, 3000);
+      
       return;
     }
 
@@ -455,6 +517,16 @@ export default class Routes extends Component<{}, State> {
     });
   };
 
+  openMap = (latitude: string, longitude: string, address: string, name: string) => {
+    Taro.openLocation({
+      latitude: parseFloat(latitude),
+      longitude: parseFloat(longitude),
+      name: name,
+      address: address,
+    });
+
+  }
+
   // Render the component
   render() {
     const { route: dateSel, showTicketInfo, checkboxOption, isCheckBoxClicked, location, selectedStartLocationIndex, selectedEndLocationIndex, ticketData, selectedTicketIndex, selectedTicket, ticketQuantities } = this.state;
@@ -554,8 +626,8 @@ export default class Routes extends Component<{}, State> {
                 <AtListItem
                   title={I18n.address}
                   note={this.state.selectedStartLocationAddress}
-                  extraText={<AtIcon value='map-pin' size='30' color='red' onClick={() => this.openPDF()} />}
-                />
+                  extraText={<AtIcon value='map-pin' size='30' color='red' />}
+                  onClick={() => this.openMap(this.state.selectedStartLocationLatitude, this.state.selectedStartLocationLongitude, this.state.selectedStartLocationAddress, this.state.selectedStartLocation)} />
               </View>
 
               {/* End Location Picker */}
@@ -581,7 +653,8 @@ export default class Routes extends Component<{}, State> {
                 <AtListItem
                   title={I18n.address}
                   note={this.state.selectedEndLocationAddress}
-                  extraText={<AtIcon value='map-pin' size='30' color='red' onClick={() => this.openPDF()} />}
+                  extraText={<AtIcon value='map-pin' size='30' color='red'/>}
+                  onClick={() => this.openMap(this.state.selectedEndLocationLatitude, this.state.selectedEndLocationLongitude, this.state.selectedEndLocationAddress, this.state.selectedEndLocation)}
                 />
               </View>
 
@@ -658,7 +731,7 @@ export default class Routes extends Component<{}, State> {
                               return (
                                 <AtList key={tpa.ticketTypeId}>
                                   <AtListItem
-                                    className='ticket-item'
+                                    className={`ticket-item ${this.state.isTicketHighlighted ? 'highlighted-ticket' : ''}`}
                                     title={`${tpa.ticketType}: $${price}`}
                                     extraText={
                                       <AtInputNumber
@@ -712,6 +785,7 @@ export default class Routes extends Component<{}, State> {
                   options={checkboxOption}
                   selectedList={isCheckBoxClicked ? ['agree'] : []}
                   onChange={this.handleCheckBoxChange}
+                  className={this.state.isCheckboxHighlighted ? 'highlighted-checkbox' : ''}
                 />
 
                 <View className='confirm-button'>

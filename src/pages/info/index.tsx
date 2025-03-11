@@ -1,10 +1,11 @@
 import { Input, Picker, Text, View } from '@tarojs/components';
 import Taro from "@tarojs/taro";
+import dayjs from 'dayjs';
 import { Component } from 'react';
 import { TicketResponse } from 'src/components/getTicketsAPI';
 import { ReservationResponse } from 'src/components/reservationsAPI';
 import { AtButton, AtCard, AtDivider, AtForm, AtList, AtListItem } from "taro-ui";
-import { createOrder, createReservation, getTickets, wxMakePay } from '../../api/api'; // Import the API method
+import { createOrder, createReservation, getEnvIsLive, getTickets, wxMakePay } from '../../api/api'; // Import the API method
 import { I18n } from '../../I18n';
 import { RemoteSettingsService } from '../../services/remoteSettings';
 import "./index.scss";
@@ -28,6 +29,10 @@ interface State {
   selectedEndLocationAddress: string;
   countryCode: string;
   phoneError: boolean;
+  onLat: number;
+  onLong: number;
+  offLat: number;
+  offLong: number;
 }
 
 export default class PassengerForm extends Component<{}, State> {
@@ -51,6 +56,10 @@ export default class PassengerForm extends Component<{}, State> {
     selectedEndLocationAddress: '',
     countryCode: '86',
     phoneError: false,
+    onLat: 0,
+    onLong: 0,
+    offLat: 0,
+    offLong: 0,
   };
 
   async componentDidMount() {
@@ -65,6 +74,11 @@ export default class PassengerForm extends Component<{}, State> {
     const selectedStartLocationAddress = Taro.getStorageSync('selectedStartLocationAddress');
     const selectedEndLocationAddress = Taro.getStorageSync('selectedEndLocationAddress');
 
+    const onLat = Taro.getStorageSync('onLat');
+    const onLong = Taro.getStorageSync('onLong');
+    const offLat = Taro.getStorageSync('offLat');
+    const offLong = Taro.getStorageSync('offLong');
+
     this.setState({
       ticket: ticket,
       departureDate: ticketDate,
@@ -76,6 +90,10 @@ export default class PassengerForm extends Component<{}, State> {
       isDiscount: isDiscount,
       selectedStartLocationAddress: selectedStartLocationAddress,
       selectedEndLocationAddress: selectedEndLocationAddress,
+      onLat: onLat,
+      onLong: onLong,
+      offLat: offLat,
+      offLong: offLong,
     });
 
     if (!ticket) {
@@ -123,7 +141,7 @@ export default class PassengerForm extends Component<{}, State> {
     // Determine the first ticket and tpa
     let firstTicketId = '';
     let firstTpaId = '';
-    
+
     // Find the first non-empty ticket group and extract values if available
     for (const tId in ticketQuantities) {
       const tpaEntries = ticketQuantities[tId];
@@ -131,7 +149,7 @@ export default class PassengerForm extends Component<{}, State> {
         if (tpaEntries[tpaId] && tpaEntries[tpaId].length > 0) {
           firstTicketId = tId;
           firstTpaId = tpaId;
-          
+
           // Set initial values for passengerName and passengerPhone if available
           const firstPassengerData = tpaEntries[tpaId][0];
           if (firstPassengerData) {
@@ -260,7 +278,7 @@ export default class PassengerForm extends Component<{}, State> {
     } else if (field === 'tel') {
       // Check phone validity
       const phoneError = !this.validatePhoneNumber(value, this.state.countryCode);
-      this.setState({ 
+      this.setState({
         passengerPhone: value,
         phoneError: phoneError
       });
@@ -282,7 +300,7 @@ export default class PassengerForm extends Component<{}, State> {
       mask: true
     });
 
-    const { departureOriginId, departureDestinationId, departureRunId, departureDate } = this.state;
+    const { departureOriginId, departureDestinationId, departureRunId, departureDate, onLat, onLong, offLat, offLong } = this.state;
 
     if (this.formatPassengersName() === "") {
       Taro.hideLoading();
@@ -329,7 +347,7 @@ export default class PassengerForm extends Component<{}, State> {
         departureRunId,
         departureDate
       );
-      const test = true;// remove this when go live
+      const isLive = getEnvIsLive();// remove this when go live
       if (response.errorCode === "SUCCESS") {
         const goods_detail = Array.isArray(response.orderDetailLst)
           ? response.orderDetailLst.map(orderDetail => ({
@@ -353,12 +371,13 @@ export default class PassengerForm extends Component<{}, State> {
           response.orderNo,
           this.getTotalPrice(),
           ticketDetail,
-          goods_detail
+          goods_detail,
+          dayjs().add(13, 'minutes').format('YYYY-MM-DDTHH:mm:ssZ'),
         );
-        const wxPayResponse = await wxMakePay(wxCreateOrderResponseI.prepay_id);
+        const wxPayResponse = await wxMakePay(wxCreateOrderResponseI.prepay_id, response.orderNo);
         if (wxPayResponse === "SUCCESS") {
-          // if (test) {
-          const getTicketsResponse: TicketResponse = await getTickets(response.orderNo, response.orderPrice, response.ticketNo);
+        //  if (!isLive) {
+          const getTicketsResponse: TicketResponse = await getTickets(response.orderNo, response.orderPrice, response.ticketNo, this.state.onLat, this.state.onLong, this.state.offLat, this.state.offLong);
           if (getTicketsResponse.errorCode === "SUCCESS") {
             // Safely handle orderList regardless of its current type
             let existingOrderList = Taro.getStorageSync("orderList");
@@ -376,7 +395,7 @@ export default class PassengerForm extends Component<{}, State> {
             Taro.setStorageSync("ticket", getTicketsResponse);
 
             Taro.showToast({ title: I18n.submitSuccess, icon: "success" });
-            Taro.navigateTo({
+            Taro.redirectTo({
               url: '/pages/order/index'
             });
 
@@ -387,8 +406,6 @@ export default class PassengerForm extends Component<{}, State> {
           // Taro.showToast({ title: wxPayResponse, icon: "error" });
         }
       }
-
-
       else {
         Taro.hideLoading();
         Taro.showToast({ title: response.errorMsg, icon: "error" })
@@ -396,6 +413,7 @@ export default class PassengerForm extends Component<{}, State> {
 
       //call getTickets 锁票确认
     } catch (error: any) {
+
       Taro.showToast({ title: I18n.submitFailed, icon: "none" });
       console.error("API Error:", error.message);
     }
@@ -425,16 +443,12 @@ export default class PassengerForm extends Component<{}, State> {
     return routeName + ' ' + typeStrings.join(', ');
   }
 
-
   render() {
-    const { 
-      ticketQuantities, 
-      ticket, 
-      addedTickets, 
-      routeIdDiscountPrice, 
-      routeIdDiscountID, 
-      isDiscount, 
-      countryCode, 
+    const {
+      ticketQuantities,
+      ticket,
+      addedTickets,
+      countryCode,
       phoneError,
       passengerName,
       passengerPhone
@@ -454,7 +468,7 @@ export default class PassengerForm extends Component<{}, State> {
               <AtListItem title={I18n.address} note={this.state.selectedStartLocationAddress} disabled={false} />
               <AtListItem className='location-item' title={I18n.destination} extraText={addedTickets?.[0]?.endStopName || ''} />
               <AtListItem title={I18n.address} note={this.state.selectedEndLocationAddress} disabled={false} />
-              <AtListItem title={I18n.departureTime} extraText={ticket?.runStartTime} disabled={false} />
+              <AtListItem title={I18n.departureTime} extraText={ticket?.runTime?.substring(0, 5) || ''} disabled={false} />
 
               {
                 this.state.isDiscount ? (
@@ -485,7 +499,7 @@ export default class PassengerForm extends Component<{}, State> {
             })}
 
           </AtCard>
-          
+
           {/* Always show the form without depending on firstPassenger */}
           <View className="form-container">
             <AtForm>

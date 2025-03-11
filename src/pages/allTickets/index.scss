@@ -21,7 +21,7 @@
     .at-list {
       .at-card {
         margin-bottom: 16px;
-        margin:0;
+        margin: 0;
         &:last-child {
           margin-bottom: 0;
         }
@@ -144,12 +144,19 @@
       font-size: 28px;
       color: #333;
       padding-bottom: 20px;
+      flex: 9;
     }
 
     .off-board-text {
       font-size: 28px;
       color: #333;
       padding-bottom: 20px;
+      flex: 9;
+    }
+
+    .map-pin {
+      flex: 1;
+      margin-top: 10px;
     }
   }
 
@@ -204,6 +211,13 @@
   }
 }
 
+.board-container {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+}
+
 .accordion {
   background-color: white;
   border: 1px solid gainsboro;
@@ -211,7 +225,7 @@
   }
 }
 
-.apiLogo-container{
+.apiLogo-container {
   display: flex;
   justify-content: center;
   align-items: center;
@@ -229,7 +243,7 @@
 .page-info {
   font-size: 25px;
   text-align: left;
-  gap:5px;
+  gap: 5px;
 }
 
 .apiLogo {

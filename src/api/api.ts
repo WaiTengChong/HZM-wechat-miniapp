@@ -12,9 +12,8 @@ import { GetOrderInfoResponse } from "src/components/OrderInfoAPI";
 import { ReservationResponse } from "src/components/reservationsAPI";
 import { RemoteSetting } from "../types/remoteSettings";
 
-const baseUrl = "http://113.98.201.46:8050/cnhkbusapi2.2/rest/cl_basic_info";
-const localhosturl = "https://weapp.alteronetech.top/";
-//const localhosturl = "http://localhost:8081/";
+const baseUrl = "https://weapp.alteronetech.top/";
+//const baseUrl = "http://localhost:8081/";
 
 // Define local variables for each API endpoint
 const GET_REMOTE_SETTINGS = "web/getRemoteSettings";
@@ -24,12 +23,17 @@ const DEPARTURES_ZL = "web/departuresZL";
 const BUS_LINES = "web/busLines";
 const RESERVATIONS = "web/reservations";
 const GET_TICKETS = "web/getTickets";
-const CANCEL_ORDER = "web/cancelOrder";const GET_ORDER_INFO = "web/getOrderInfo";
+const CANCEL_ORDER = "web/cancelOrder";
+const GET_ORDER_INFO = "web/getOrderInfo";
 const GET_TICKET_INFO = "web/getTicketInfo";
 const WX_LOGIN = "web/wxLogin";
 const CREATE_WECHAT_PAY_JSAPI = "pay/createWechatPayJsapi";
 const GET_WECHAT_REQUEST_PAYMENT = "pay/getWechatRequestPayment";
 const GET_ORDER_LIST = "web/getOrderList";
+
+export const getEnvIsLive = () => {
+  return (baseUrl as string) === "https://weapp.alteronetech.top/";
+};
 
 const makeAPICall = async (
   path: string,
@@ -41,7 +45,7 @@ const makeAPICall = async (
   const OPEN_ID = Taro.getStorageSync("OPEN_ID");
   try {
     const response = await axios({
-      baseURL: localhosturl,
+      baseURL: baseUrl,
       url: path,
       method: method,
       data: method !== "GET" ? data : undefined,
@@ -49,7 +53,9 @@ const makeAPICall = async (
       headers: {
         Accept: "*/*",
         //if path include pay, use application/json
-        "Content-Type": path.includes("pay") ? "application/json" : "application/x-www-form-urlencoded; charset=UTF-8",
+        "Content-Type": path.includes("pay")
+          ? "application/json"
+          : "application/x-www-form-urlencoded; charset=UTF-8",
         authKey: AUTH_TICKET,
         openId: OPEN_ID,
         web: "1",
@@ -62,10 +68,9 @@ const makeAPICall = async (
         title: response.data.message,
         icon: "error",
       }).then(() => {
-
         Taro.clearStorageSync();
         Taro.navigateTo({
-          url: "/pages/index/index"
+          url: "/pages/index/index",
         });
       });
       return Promise.reject(response.data.message);
@@ -73,10 +78,10 @@ const makeAPICall = async (
       return response.data.resultData;
     }
   } catch (error) {
-    if (error.code === 'ECONNABORTED') {
+    if (error.code === "ECONNABORTED") {
       Taro.showToast({
-        title: '网络超时',
-        icon: 'error',
+        title: "网络超时",
+        icon: "error",
       });
     }
     throw new Error(`API call failed: ${error.message}`);
@@ -108,7 +113,8 @@ const createOrder = async (
   orderNo: string,
   totalPrice: string,
   description: string,
-  ticketData: GoodsDetail[]
+  ticketData: GoodsDetail[],
+  time_expire: string
 ) => {
   const OPEN_ID = Taro.getStorageSync("OPEN_ID");
   const response = await makeAPICall(CREATE_WECHAT_PAY_JSAPI, "POST", {
@@ -124,11 +130,15 @@ const createOrder = async (
       goods_detail: ticketData,
     },
     openid: OPEN_ID, // User's open ID
+    time_expire: time_expire,
   });
   return response;
 };
 
-const wxMakePay = async (prepayId: string): Promise<string> => {
+const wxMakePay = async (
+  prepayId: string,
+  orderNo: string
+): Promise<string> => {
   try {
     console.log("is prepayId ", prepayId);
     const response = await makeAPICall(GET_WECHAT_REQUEST_PAYMENT, "POST", {
@@ -149,7 +159,8 @@ const wxMakePay = async (prepayId: string): Promise<string> => {
             resolve(res.errMsg);
           }
         },
-        fail: function (res) {
+        fail: async function (res) {
+          await cancelOrder(orderNo);
           if (res.errMsg === "requestPayment:fail cancel") {
             resolve("CANCELLED"); // User cancelled payment
             Taro.showToast({
@@ -164,10 +175,7 @@ const wxMakePay = async (prepayId: string): Promise<string> => {
             });
           }
         },
-        complete: function() {
-          // Always called when payment flow ends
-          Taro.hideLoading();
-        }
+        complete: function () {},
       });
     });
   } catch (error) {
@@ -338,7 +346,11 @@ const createReservation = async (
 const getTickets = async (
   orderNo: string,
   price: string,
-  trackNo: string
+  trackNo: string,
+  onLat: number,
+  onLong: number,
+  offLat: number,
+  offLong: number
 ): Promise<TicketResponse> => {
   const AUTH_TICKET = Taro.getStorageSync("AUTH_TICKET");
   const response = await makeAPICall(
@@ -354,6 +366,10 @@ const getTickets = async (
       timestamp: dayjs().unix().toString(),
       format: "json",
       auth_key: AUTH_TICKET,
+      onLat: onLat.toString(),
+      onLong: onLong.toString(),
+      offLat: offLat.toString(),
+      offLong: offLong.toString(),
     },
     {
       Accept: "*/*",
@@ -369,13 +385,20 @@ const getTickets = async (
 };
 
 const cancelOrder = async (orderNo: string): Promise<CancelOrderResponse> => {
-
   const response = await makeAPICall(
     CANCEL_ORDER,
-    "GET",
+    "POST",
     {
       OrderNo: orderNo,
       format: "json",
+    },
+    {
+      Accept: "*/*",
+      "Accept-Language": "en,zh;q=0.9,zh-CN;q=0.8,zh-TW;q=0.7",
+      "Cache-Control": "no-cache",
+      "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
+      DNT: "1",
+      web: "1",
     }
   );
 
@@ -456,7 +479,7 @@ const wxLogin = () => {
       if (res.code) {
         //发起网络请求
         Taro.request({
-          url: `${localhosturl}${WX_LOGIN}`,
+          url: `${baseUrl}${WX_LOGIN}`,
           data: {
             code: res.code,
           },
@@ -466,8 +489,6 @@ const wxLogin = () => {
           },
           success: (res) => {
             if (res.data.messageCode == 0) {
-          
-
               Taro.showToast({
                 title: "登录成功",
                 icon: "success",
@@ -503,7 +524,7 @@ const wxLogin = () => {
 };
 
 export {
-  baseUrl, cancelOrder,
+  cancelOrder,
   createOrder,
   createReservation,
   fetchRoutesAPILocal,
@@ -511,10 +532,11 @@ export {
   getBusLine,
   getDeparturesZL,
   getLocationByRoute,
-  getOrderInfo, getOrderList, getRemoteSettings,
+  getOrderInfo,
+  getOrderList,
+  getRemoteSettings,
   getTicketInfo,
   getTickets,
-  localhosturl,
   wxLogin,
   wxMakePay
 };

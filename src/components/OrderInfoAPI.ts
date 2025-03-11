@@ -8,7 +8,7 @@ export interface GetOrderInfoResponse {
   orderDetailLst: OrderDetail | OrderDetail[]; // Can be single object or array
 }
 
-interface OrderDetail {
+export interface OrderDetail {
   cost: string;
   depatureDestinatId: string;
   depatureDestinatName: string;
@@ -38,4 +38,8 @@ interface OrderDetail {
   ticketCategory: string;
   ticketCode: string;
   trip: string;
+  onLat: string;
+  onLong: string;
+  offLat: string;
+  offLong: string;
 }
