@@ -3,6 +3,7 @@ import Taro from "@tarojs/taro";
 import { Component, PropsWithChildren } from 'react';
 import { AtGrid, AtIcon } from 'taro-ui';
 import "taro-ui/dist/style/components/button.scss"; // 按需引入
+import carLogo from '../../../src/image/carLogo.png';
 import logo from '../../../src/image/HZM_Logo.png';
 import location from '../../../src/image/location.png';
 import { wxLogin } from '../../api/api';
@@ -229,7 +230,7 @@ export default class Index extends Component<PropsWithChildren, State> {
               hasBorder={true}
               data={[
                 {
-                  image: 'https://img.icons8.com/color/48/000000/train-ticket.png',
+                  image: carLogo,
                   value: I18n.buyTicket,
                 },
                 {
@@ -237,12 +238,12 @@ export default class Index extends Component<PropsWithChildren, State> {
                   value: I18n.myTickets
                 },
                 {
-                  image: 'https://img.icons8.com/color/48/000000/info.png',
-                  value: I18n.customerService
-                },
-                {
                   image: location,
                   value: I18n.locationInfo
+                },
+                {
+                  image: 'https://img.icons8.com/color/48/000000/info.png',
+                  value: I18n.customerService
                 }
               ]}
             />
