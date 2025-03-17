@@ -3,7 +3,7 @@ interface DepartureZL {
     errorCode: string;
     errorMsg: string;
     overdueNum: string;
-    run: Ticket[];
+    run: Ticket[] | Ticket;
   }
   
   interface Ticket {

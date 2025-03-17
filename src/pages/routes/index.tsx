@@ -154,21 +154,29 @@ export default class Routes extends Component<{}, State> {
           "",
           date
         );
-        if (response.run != undefined && response.run.length > 0) {
+        if (response.run != undefined) {
+          // Convert to array if it's a single Ticket object
+          const ticketsArray = Array.isArray(response.run) ? response.run : [response.run];
+          
+          if (ticketsArray.length > 0) {
+            //if the date is today, only show the ticket that is after the current time
+            if (date === dayjs().format('YYYY-MM-DD')) {
+              this.setState({
+                ticketData: ticketsArray.filter(ticket => dayjs(`${date} ${ticket.runTime}`).isAfter(dayjs().add(1, 'hour')))
+              });
+            } else {
+              this.setState({
+                ticketData: ticketsArray,
+              });
+            }
 
-          //if the date is today, only show the ticket that is after the current time
-          if (date === dayjs().format('YYYY-MM-DD')) {
-            this.setState({
-              ticketData: response.run.filter(ticket => dayjs(`${date} ${ticket.runTime}`).isAfter(dayjs().add(1, 'hour')))
-            });
+            Taro.setStorageSync("ticket_date", this.state.dateSel);
           } else {
-            this.setState({
-              ticketData: response.run,
-            });
+            this.setState({ ticketData: [], showTicketInfo: false });
+            if (!isFirst) {
+              Taro.showToast({ title: '没有可用的车票', icon: 'none' })
+            }
           }
-
-          Taro.setStorageSync("ticket_date", this.state.dateSel);
-
         } else {
           this.setState({ ticketData: [], showTicketInfo: false });
           if (!isFirst) {
