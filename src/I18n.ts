@@ -1,6 +1,5 @@
 import LocalizedStrings from "react-localization";
 
-
 export const I18n = new LocalizedStrings({
   zh: {
     login: "登录",
@@ -11,6 +10,7 @@ export const I18n = new LocalizedStrings({
     loggedIn: "已登录",
     logout: "登出",
     buyTicket: "购买车票 -\n七人商务车",
+    sevenSeatCar: "七人商务车",
     myTickets: "我的车票",
     customerService: "客服中心",
     locationInfo: "站点信息",
@@ -129,7 +129,8 @@ export const I18n = new LocalizedStrings({
     clickToLogin: "請點擊登入",
     loggedIn: "已登入",
     logout: "登出",
-    buyTicket: "購買七人商務車票",
+    buyTicket: "購買車票 -\n七人商務車",
+    sevenSeatCar: "七人商務車",
     myTickets: "我的車票",
     customerService: "客服中心",
     locationInfo: "站點資訊",
@@ -241,4 +242,3 @@ export const I18n = new LocalizedStrings({
     orderSuccess: "訂票成功",
   },
 });
-

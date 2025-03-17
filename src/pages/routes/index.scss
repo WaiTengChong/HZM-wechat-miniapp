@@ -242,3 +242,21 @@
     transform: scale(1);
   }
 }
+
+.banner{
+  background-color: #007bff; 
+  padding: 10px;
+  text-align: center;
+  color: white;
+  font-weight: bold;
+  border-radius: 4px;
+  margin: 10px;
+  margin-bottom: 25px;
+  border-radius: 8px;
+}
+
+.banner-title{
+  font-size: 40px;
+  font-weight: bold;
+  color: white;
+}

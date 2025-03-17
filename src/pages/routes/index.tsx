@@ -157,7 +157,7 @@ export default class Routes extends Component<{}, State> {
         if (response.run != undefined) {
           // Convert to array if it's a single Ticket object
           const ticketsArray = Array.isArray(response.run) ? response.run : [response.run];
-          
+
           if (ticketsArray.length > 0) {
             //if the date is today, only show the ticket that is after the current time
             if (date === dayjs().format('YYYY-MM-DD')) {
@@ -376,14 +376,14 @@ export default class Routes extends Component<{}, State> {
     if (!selectedTicket || this.state.addedTickets.length === 0) {
       // Set the ticket items to highlighted
       this.setState({ isTicketHighlighted: true });
-      
+
       // Show the toast
       Taro.showToast({
         title: I18n.pleaseSelectTicket,
         icon: 'none',
         duration: 2000
       });
-      
+
       // Scroll to the ticket section
       setTimeout(() => {
         Taro.createSelectorQuery()
@@ -403,14 +403,14 @@ export default class Routes extends Component<{}, State> {
       setTimeout(() => {
         this.setState({ isTicketHighlighted: false });
       }, 3000);
-      
+
       return;
     }
 
     if (!isCheckBoxClicked) {
       // Set the checkbox to highlighted
       this.setState({ isCheckboxHighlighted: true });
-      
+
       // Show the toast
       Taro.showToast({
         title: I18n.pleaseAgreeToTerms,
@@ -422,7 +422,7 @@ export default class Routes extends Component<{}, State> {
       setTimeout(() => {
         this.setState({ isCheckboxHighlighted: false });
       }, 3000);
-      
+
       return;
     }
 
@@ -547,6 +547,9 @@ export default class Routes extends Component<{}, State> {
     return (
       <View className='container'>
         <View className='page-body'>
+          <View className='banner'>
+            <Text className='banner-title'>{I18n.sevenSeatCar}</Text>
+          </View>
           <AtSteps
             items={items}
             current={this.state.stepCurrent}
@@ -661,7 +664,7 @@ export default class Routes extends Component<{}, State> {
                 <AtListItem
                   title={I18n.address}
                   note={this.state.selectedEndLocationAddress}
-                  extraText={<AtIcon value='map-pin' size='30' color='red'/>}
+                  extraText={<AtIcon value='map-pin' size='30' color='red' />}
                   onClick={() => this.openMap(this.state.selectedEndLocationLatitude, this.state.selectedEndLocationLongitude, this.state.selectedEndLocationAddress, this.state.selectedEndLocation)}
                 />
               </View>
