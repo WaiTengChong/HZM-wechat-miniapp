@@ -1,14 +1,21 @@
 import Taro from '@tarojs/taro';
+import { I18n } from '../I18n';
+import { RemoteSettingsService } from '../services/remoteSettings';
 
 /**
- * Opens a PDF file from a URL, using cache when available
+ * Opens a PDF file from a URL, always downloading it fresh
  * @param url The URL of the PDF file to download/open
- * @param title The title to use for the cached file name
+ * @param title The title to use for the file name
  */
-export const openPDF = () => {
-  const url = "https://image.alteronetech.top/image/pdf/info.pdf";
-  const title = 'info';
-  console.log(Taro.env.USER_DATA_PATH, "USER_DATA_PATH");
+export const openPDF = async () => {
+ await RemoteSettingsService.getInstance()
+    .initialize()
+    .then(() => {
+      const url = RemoteSettingsService.getInstance().getString(
+        "infoFile_url",
+        "https://image.alteronetech.top/image/pdf/info.pdf"
+      );
+  const title = url.split('/').pop()?.split('.')[0] || 'info';
   const filePath = `${Taro.env.USER_DATA_PATH}/${title}.pdf`;
   
   // Show loading indicator
@@ -21,7 +28,6 @@ export const openPDF = () => {
   Taro.getFileInfo({
     filePath,
     success: (fileInfo) => {
-      console.log('File exists in cache:', fileInfo);
       // File exists, open directly
       Taro.hideLoading();
       Taro.openDocument({
@@ -65,7 +71,7 @@ export const openPDF = () => {
       downloadTask.onProgressUpdate((res) => {
         // Update loading message with progress percentage
         Taro.showLoading({
-          title: `Downloading: ${res.progress}%`,
+          title: `${I18n.downloading}: ${res.progress}%`,
           mask: true
         });
         
@@ -78,5 +84,6 @@ export const openPDF = () => {
         }
       });
     }
+    });
   });
-}; 
+};

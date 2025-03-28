@@ -113,10 +113,10 @@ export default class Index extends Component<PropsWithChildren, State> {
       Taro.navigateTo({ url: '/pages/allTickets/index' });
     }
     if (index === 2) {
-      Taro.navigateTo({ url: '/pages/support/index' });
+      this.openPDF();
     }
     if (index === 3) {
-      this.openPDF();
+      Taro.navigateTo({ url: '/pages/support/index' });
     }
   }
 
@@ -269,7 +269,7 @@ export default class Index extends Component<PropsWithChildren, State> {
             )}
             <View className='version-container'>
               <Text className='version-text'>
-                0.1.9
+                0.1.11
               </Text>
             </View>
 

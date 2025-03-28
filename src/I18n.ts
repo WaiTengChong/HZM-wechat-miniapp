@@ -120,6 +120,7 @@ export const I18n = new LocalizedStrings({
     earlyArrival:
       "旅客须于最少于发车前15分钟，凭QR Code到上车点售票处换取车票。",
     orderSuccess: "订票成功",
+    downloading: "下载中",
   },
   hk: {
     login: "登入",
@@ -240,5 +241,6 @@ export const I18n = new LocalizedStrings({
     earlyArrival:
       "旅客須於最少於發車前15分鐘，憑QR Code到上車點售票處換取車票。",
     orderSuccess: "訂票成功",
+    downloading: "下載中",
   },
 });
