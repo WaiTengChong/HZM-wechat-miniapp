@@ -5,7 +5,7 @@ import { Component } from 'react';
 import { TicketResponse } from 'src/components/getTicketsAPI';
 import { ReservationResponse } from 'src/components/reservationsAPI';
 import { AtButton, AtCard, AtDivider, AtForm, AtList, AtListItem } from "taro-ui";
-import { createOrder, createReservation, getEnvIsLive, getTickets, wxMakePay } from '../../api/api'; // Import the API method
+import { createOrder, createReservation, getTickets, isTestMode, wxMakePay } from '../../api/api'; // Import the API method
 import { I18n } from '../../I18n';
 import { RemoteSettingsService } from '../../services/remoteSettings';
 import "./index.scss";
@@ -347,7 +347,7 @@ export default class PassengerForm extends Component<{}, State> {
         departureRunId,
         departureDate
       );
-      const isLive = getEnvIsLive();// remove this when go live
+
       if (response.errorCode === "SUCCESS") {
         const goods_detail = Array.isArray(response.orderDetailLst)
           ? response.orderDetailLst.map(orderDetail => ({
@@ -367,16 +367,53 @@ export default class PassengerForm extends Component<{}, State> {
           ? this.getTicketTypeCount(response.orderDetailLst)
           : response.orderDetailLst.routeName + ' ' + response.orderDetailLst.passangerType + ' x1';
 
-        const wxCreateOrderResponseI = await createOrder(
-          response.orderNo,
-          this.getTotalPrice(),
-          ticketDetail,
-          goods_detail,
-          dayjs().add(13, 'minutes').format('YYYY-MM-DDTHH:mm:ssZ'),
-        );
-        const wxPayResponse = await wxMakePay(wxCreateOrderResponseI.prepay_id, response.orderNo);
-        if (wxPayResponse === "SUCCESS") {
-        //  if (!isLive) {
+        if (!isTestMode) {
+          const wxCreateOrderResponseI = await createOrder(
+            response.orderNo,
+            this.getTotalPrice(),
+            ticketDetail,
+            goods_detail,
+            dayjs().add(13, 'minutes').format('YYYY-MM-DDTHH:mm:ssZ'),
+          );
+          const wxPayResponse = await wxMakePay(wxCreateOrderResponseI.prepay_id, response.orderNo);
+          if (wxPayResponse === "SUCCESS") {
+            // Payment successful, get tickets
+            const getTicketsResponse: TicketResponse = await getTickets(response.orderNo, response.orderPrice, response.ticketNo, this.state.onLat, this.state.onLong, this.state.offLat, this.state.offLong);
+            if (getTicketsResponse.errorCode === "SUCCESS") {
+              // Safely handle orderList regardless of its current type
+              let existingOrderList = Taro.getStorageSync("orderList");
+              let orderList: string[] = [];
+
+              if (Array.isArray(existingOrderList)) {
+                orderList = existingOrderList;
+              } else if (existingOrderList) {
+                // If it's an object or any other type, convert to array
+                orderList = [String(existingOrderList)];
+              }
+
+              orderList.push(response.orderNo);
+              Taro.setStorageSync("orderList", orderList);
+              Taro.setStorageSync("ticket", getTicketsResponse);
+
+              Taro.showToast({ title: I18n.submitSuccess, icon: "success" });
+              Taro.redirectTo({
+                url: '/pages/order/index'
+              });
+
+              Taro.hideLoading();
+            } else {
+              // Handle getTickets failure after payment
+              Taro.hideLoading();
+              Taro.showToast({ title: getTicketsResponse.errorMsg || '获取票据失败', icon: "error" });
+            }
+          } else {
+            // Payment failed or cancelled
+            Taro.hideLoading();
+            // Optionally show a message based on wxPayResponse ('CANCELLED', 'FAILED', etc.)
+            // Taro.showToast({ title: `支付未完成: ${wxPayResponse}`, icon: "none" });
+          }
+        } else {
+          // Test mode: Skip payment, directly get tickets
           const getTicketsResponse: TicketResponse = await getTickets(response.orderNo, response.orderPrice, response.ticketNo, this.state.onLat, this.state.onLong, this.state.offLat, this.state.offLong);
           if (getTicketsResponse.errorCode === "SUCCESS") {
             // Safely handle orderList regardless of its current type
@@ -394,16 +431,17 @@ export default class PassengerForm extends Component<{}, State> {
             Taro.setStorageSync("orderList", orderList);
             Taro.setStorageSync("ticket", getTicketsResponse);
 
-            Taro.showToast({ title: I18n.submitSuccess, icon: "success" });
+            Taro.showToast({ title: I18n.submitSuccess + ' (测试模式)', icon: "success" });
             Taro.redirectTo({
               url: '/pages/order/index'
             });
 
             Taro.hideLoading();
+          } else {
+            // Handle getTickets failure in test mode
+            Taro.hideLoading();
+            Taro.showToast({ title: getTicketsResponse.errorMsg || '获取票据失败 (测试模式)', icon: "error" });
           }
-        } else {
-          Taro.hideLoading();
-          // Taro.showToast({ title: wxPayResponse, icon: "error" });
         }
       }
       else {

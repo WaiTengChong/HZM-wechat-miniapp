@@ -4,7 +4,7 @@ import dayjs from 'dayjs';
 import { Component } from 'react';
 import { AtActivityIndicator, AtButton, AtCalendar, AtCheckbox, AtDivider, AtGrid, AtIcon, AtInputNumber, AtList, AtListItem, AtSteps } from 'taro-ui';
 import "taro-ui/dist/style/components/button.scss"; // 按需引入
-import { fetchRoutesAPILocal, getDeparturesZL, getLocationByRoute } from "../../api/api";
+import { fetchRoutesAPILocal, getDeparturesZL, getLocationByRoute, isTestMode } from "../../api/api";
 import { I18n } from '../../I18n';
 import { RemoteSettingsService } from '../../services/remoteSettings';
 import { openPDF } from '../../utils/pdfUtils';
@@ -77,13 +77,14 @@ export default class Routes extends Component<{}, State> {
           ? response.route.filter(route => filteredRoute.includes(route.routeId))
           : response.route;
 
+        const routesToUse = isTestMode ? response.route : filteredRoutes;
+
         this.setState({
-          route: filteredRoutes,
-          startAreaList: [...new Set(filteredRoutes.map(route => route.fromCityCName))].filter(Boolean) as string[],
-          endAreaList: [...new Set(filteredRoutes.map(route => route.toCityCName))].filter(Boolean) as string[],
+          route: routesToUse,
+          startAreaList: [...new Set(routesToUse.map(route => route.fromCityCName))].filter(Boolean) as string[],
+          endAreaList: [...new Set(routesToUse.map(route => route.toCityCName))].filter(Boolean) as string[],
           loading: false,
         });
-
 
       } else {
         console.error('Invalid response:', response.message);

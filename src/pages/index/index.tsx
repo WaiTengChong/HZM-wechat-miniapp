@@ -269,7 +269,7 @@ export default class Index extends Component<PropsWithChildren, State> {
             )}
             <View className='version-container'>
               <Text className='version-text'>
-                0.1.11
+                0.1.12
               </Text>
             </View>
 

@@ -12,8 +12,9 @@ import { GetOrderInfoResponse } from "src/components/OrderInfoAPI";
 import { ReservationResponse } from "src/components/reservationsAPI";
 import { RemoteSetting } from "../types/remoteSettings";
 
-const baseUrl = "https://weapp.alteronetech.top/";
-//const baseUrl = "http://localhost:8081/";
+export const isTestMode = true; // Manually change this to false for production mode
+
+const baseUrl = isTestMode ? "http://localhost:8081/" : "https://weapp.alteronetech.top/";
 
 // Define local variables for each API endpoint
 const GET_REMOTE_SETTINGS = "web/getRemoteSettings";
@@ -30,10 +31,6 @@ const WX_LOGIN = "web/wxLogin";
 const CREATE_WECHAT_PAY_JSAPI = "pay/createWechatPayJsapi";
 const GET_WECHAT_REQUEST_PAYMENT = "pay/getWechatRequestPayment";
 const GET_ORDER_LIST = "web/getOrderList";
-
-export const getEnvIsLive = () => {
-  return (baseUrl as string) === "https://weapp.alteronetech.top/";
-};
 
 const makeAPICall = async (
   path: string,
