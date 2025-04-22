@@ -2,8 +2,9 @@ import { Picker, Text, View } from '@tarojs/components';
 import Taro from "@tarojs/taro";
 import dayjs from 'dayjs';
 import { Component } from 'react';
-import { AtActivityIndicator, AtButton, AtCalendar, AtCheckbox, AtDivider, AtGrid, AtIcon, AtInputNumber, AtList, AtListItem, AtSteps } from 'taro-ui';
+import { AtActivityIndicator, AtButton, AtCalendar, AtCard, AtCheckbox, AtDivider, AtGrid, AtIcon, AtInputNumber, AtList, AtListItem, AtSteps } from 'taro-ui';
 import "taro-ui/dist/style/components/button.scss"; // 按需引入
+import "taro-ui/dist/style/components/card.scss"; // 按需引入
 import { fetchRoutesAPILocal, getDeparturesZL, getLocationByRoute, isTestMode } from "../../api/api";
 import { I18n } from '../../I18n';
 import { RemoteSettingsService } from '../../services/remoteSettings';
@@ -579,13 +580,14 @@ export default class Routes extends Component<{}, State> {
                   )}
                 </View>
                 {this.state.selectedStartArea === "" && (
-                  <AtGrid
-                    columnNum={4}
-                    data={this.state.startAreaList.map(area => ({
-                      value: area.includes('（') ? area.replace('（', '\n(').replace('）', ')') : area,
-                    }))}
-                    onClick={(item, index) => this.handleStartAreaClick(index)}
-                  />
+                    <AtGrid
+                      hasBorder={false}
+                      columnNum={3}
+                      data={this.state.startAreaList.map(area => ({
+                        value: area.includes('（') ? area.replace('（', '\n(').replace('）', ')') : area,
+                      }))}
+                      onClick={(item, index) => this.handleStartAreaClick(index)}
+                    />
                 )}
 
                 <View style={{ height: '20px' }}></View>
@@ -597,7 +599,8 @@ export default class Routes extends Component<{}, State> {
                 </View>
                 {this.state.selectedEndArea === "" && (
                   <AtGrid
-                    columnNum={4}
+                    hasBorder={false}
+                    columnNum={3}
                     data={this.state.endAreaList.map(area => ({
                       value: area.includes('（') ? area.replace('（', '\n(').replace('）', ')') : area,
                     }))}

@@ -10,6 +10,18 @@
   max-width: 400px;
 }
 
+.at-grid-item__content-inner {
+  background-color: #fbfbfb;
+  border-radius: 8px;
+  margin: 10px;
+  border: 1px solid #dbdbdb;
+  text-align: center;
+  
+}
+
+.at-grid-item__content-inner  .content-inner__text {
+  font-size: 35px;
+}
 
 .page-body {
   background-color: #ffffff;
@@ -123,6 +135,10 @@
     line-height: 1.4;
     padding: 4px;
     min-height: 40px;
+  }
+
+  .at-grid__flex{
+    margin-top:20px;
   }
 
 .step-two-container{
