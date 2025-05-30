@@ -2,13 +2,14 @@ import { Input, Picker, Text, View } from '@tarojs/components';
 import Taro from "@tarojs/taro";
 import dayjs from 'dayjs';
 import { Component } from 'react';
-import { TicketResponse } from 'src/components/getTicketsAPI';
+import { GetOrderInfoResponse } from "src/components/OrderInfoAPI";
 import { ReservationResponse } from 'src/components/reservationsAPI';
 import { AtButton, AtCard, AtDivider, AtForm, AtList, AtListItem } from "taro-ui";
-import { createOrder, createReservation, getTickets, isTestMode, wxMakePay } from '../../api/api'; // Import the API method
+import { cancelOrder, createOrder, createReservation, getOrderInfo, getTickets, isTestMode, wxMakePay } from '../../api/api'; // Import the API method
 import { I18n } from '../../I18n';
 import { RemoteSettingsService } from '../../services/remoteSettings';
 import "./index.scss";
+
 interface State {
   ticket: Ticket;
   ticketTypeId: string;
@@ -345,7 +346,11 @@ export default class PassengerForm extends Component<{}, State> {
         departureOriginId,
         departureDestinationId,
         departureRunId,
-        departureDate
+        departureDate,
+        onLat,
+        onLong,
+        offLat,
+        offLong
       );
 
       if (response.errorCode === "SUCCESS") {
@@ -365,22 +370,79 @@ export default class PassengerForm extends Component<{}, State> {
 
         const ticketDetail = Array.isArray(response.orderDetailLst)
           ? this.getTicketTypeCount(response.orderDetailLst)
-          : response.orderDetailLst.routeName + ' ' + response.orderDetailLst.passangerType + ' x1';
+          : response.orderDetailLst.routeName + ' ' + response.orderDetailLst.passangerType +"x1 "+ response.orderDetailLst.passenger + " " + response.orderDetailLst.runDate + " " + response.orderDetailLst.runTime;
 
-        if (!isTestMode) {
-          const wxCreateOrderResponseI = await createOrder(
-            response.orderNo,
-            this.getTotalPrice(),
-            ticketDetail,
-            goods_detail,
-            dayjs().add(13, 'minutes').format('YYYY-MM-DDTHH:mm:ssZ'),
-          );
-          const wxPayResponse = await wxMakePay(wxCreateOrderResponseI.prepay_id, response.orderNo);
-          if (wxPayResponse === "SUCCESS") {
-            // Payment successful, get tickets
-            const getTicketsResponse: TicketResponse = await getTickets(response.orderNo, response.orderPrice, response.ticketNo, this.state.onLat, this.state.onLong, this.state.offLat, this.state.offLong);
-            if (getTicketsResponse.errorCode === "SUCCESS") {
-              // Safely handle orderList regardless of its current type
+        const wxCreateOrderResponseI = await createOrder(
+          response.orderNo,
+          this.getTotalPrice(),
+          ticketDetail,
+          goods_detail,
+          dayjs().add(13, 'minutes').format('YYYY-MM-DDTHH:mm:ssZ'),
+        );
+
+        console.log("wxCreateOrderResponseI", wxCreateOrderResponseI);
+
+        Taro.showLoading({
+          title: "处理订单中...",
+          mask: true
+        });
+        if (isTestMode) {
+
+          // Test mode: Skip payment, directly get tickets
+          const getTicketsResponse = await getTickets(response.orderNo, response.orderPrice);
+          console.log(getTicketsResponse);
+          if (!getTicketsResponse) {
+            Taro.showToast({ title: I18n.submitFailed, icon: "none" });
+            await cancelOrder(response.orderNo);
+          } else {
+    
+
+            let orderProcessed = false;
+            let maxAttempts = 10; // Maximum number of polling attempts
+            let attempt = 0;
+            let orderInfo: GetOrderInfoResponse | null = null;
+
+            // Poll the server until the order is processed (ticket created)
+            while (!orderProcessed && attempt < maxAttempts) {
+              Taro.hideLoading();
+              Taro.showLoading({
+                title: "訂單處理中" + attempt,
+                mask: true
+              });
+
+              attempt++;
+              try {
+                // Wait for 2 seconds between attempts
+                await new Promise(resolve => setTimeout(resolve, 2000));
+
+                // Get order info to check if ticket has been created
+                const orderInfoResponse: GetOrderInfoResponse = await getOrderInfo(response.orderNo);
+                console.log("orderInfoResponse", orderInfoResponse);
+                if (orderInfoResponse.errorCode === "SUCCESS") {
+
+                  // Check payment status based on whether orderDetailLst is an array or single object
+                  const allPaid = Array.isArray(orderInfoResponse.orderDetailLst)
+                    ? orderInfoResponse.orderDetailLst.length > 0 &&
+                    orderInfoResponse.orderDetailLst.every(detail => detail.wxPay_status === 1)
+                    : orderInfoResponse.orderDetailLst.wxPay_status === 1;
+                  if (allPaid) {
+                    // Order has been processed, ticket created, and payment confirmed
+                    orderProcessed = true;
+                    orderInfo = orderInfoResponse;
+                    break; // Use break instead of return to exit the loop
+                  } else {
+                    console.log(`Attempt ${attempt}: Payment not confirmed for all tickets...`);
+                  }
+                } else {
+                  console.log(`Attempt ${attempt}: Order information not available yet...`);
+                }
+              } catch (error) {
+                console.error(`Polling error (attempt ${attempt}):`, error);
+              }
+            }
+
+            if (orderProcessed && orderInfo) {
+              // Add order to local storage
               let existingOrderList = Taro.getStorageSync("orderList");
               let orderList: string[] = [];
 
@@ -393,65 +455,125 @@ export default class PassengerForm extends Component<{}, State> {
 
               orderList.push(response.orderNo);
               Taro.setStorageSync("orderList", orderList);
-              Taro.setStorageSync("ticket", getTicketsResponse);
+              Taro.setStorageSync("ticket", orderInfo);
 
               Taro.showToast({ title: I18n.submitSuccess, icon: "success" });
               Taro.redirectTo({
                 url: '/pages/order/index'
               });
-
-              Taro.hideLoading();
             } else {
-              // Handle getTickets failure after payment
               Taro.hideLoading();
-              Taro.showToast({ title: getTicketsResponse.errorMsg || '获取票据失败', icon: "error" });
+              // Order processing timeout
+              Taro.showToast({
+                title: "订单处理超时，请检查订单状态",
+                icon: "none"
+              });
+            }
+
+          }
+        } else {
+          const wxPayResponse = await wxMakePay(wxCreateOrderResponseI.prepay_id, response.orderNo);
+          if (wxPayResponse === "SUCCESS") {
+            // Payment successful, now poll for order info until ticket is created
+            Taro.showLoading({
+              title: "处理订单中...",
+              mask: true
+            });
+
+            let orderProcessed = false;
+            let maxAttempts = 10; // Maximum number of polling attempts
+            let attempt = 0;
+            let orderInfo: GetOrderInfoResponse | null = null;
+
+            // Poll the server until the order is processed (ticket created)
+            while (!orderProcessed && attempt < maxAttempts) {
+              attempt++;
+              try {
+                // Wait for 2 seconds between attempts
+                await new Promise(resolve => setTimeout(resolve, 2000));
+
+                // Get order info to check if ticket has been created
+                const orderInfoResponse: GetOrderInfoResponse = await getOrderInfo(response.orderNo);
+                if (orderInfoResponse.errorCode === "SUCCESS") {
+
+                  // Check payment status based on whether orderDetailLst is an array or single object
+                  const allPaid = Array.isArray(orderInfoResponse.orderDetailLst)
+                    ? orderInfoResponse.orderDetailLst.length > 0 &&
+                    orderInfoResponse.orderDetailLst.every(detail => detail.wxPay_status === 1)
+                    : orderInfoResponse.orderDetailLst.wxPay_status === 1;
+                  if (allPaid) {
+                    // Order has been processed, ticket created, and payment confirmed
+                    orderProcessed = true;
+                    orderInfo = orderInfoResponse;
+                    break; // Use break instead of return to exit the loop
+                  } else {
+                    console.log(`Attempt ${attempt}: Payment not confirmed for all tickets...`);
+                  }
+                } else {
+                  console.log(`Attempt ${attempt}: Order information not available yet...`);
+                }
+              } catch (error) {
+                console.error(`Polling error (attempt ${attempt}):`, error);
+              }
+            }
+
+            if (orderProcessed && orderInfo) {
+              // Add order to local storage
+              let existingOrderList = Taro.getStorageSync("orderList");
+              let orderList: string[] = [];
+
+              if (Array.isArray(existingOrderList)) {
+                orderList = existingOrderList;
+              } else if (existingOrderList) {
+                // If it's an object or any other type, convert to array
+                orderList = [String(existingOrderList)];
+              }
+
+              orderList.push(response.orderNo);
+              Taro.setStorageSync("orderList", orderList);
+              Taro.setStorageSync("ticket", orderInfo);
+
+              Taro.showToast({ title: I18n.submitSuccess, icon: "success" });
+              Taro.redirectTo({
+                url: '/pages/order/index'
+              });
+            } else {
+              // Order processing timeout
+              Taro.showToast({
+                title: "订单处理超时，请检查订单状态",
+                icon: "none"
+              });
+
+              // Still redirect to orders page to let user check status
+              Taro.redirectTo({
+                url: '/pages/order/index'
+              });
             }
           } else {
             // Payment failed or cancelled
             Taro.hideLoading();
-            // Optionally show a message based on wxPayResponse ('CANCELLED', 'FAILED', etc.)
-            // Taro.showToast({ title: `支付未完成: ${wxPayResponse}`, icon: "none" });
-          }
-        } else {
-          // Test mode: Skip payment, directly get tickets
-          const getTicketsResponse: TicketResponse = await getTickets(response.orderNo, response.orderPrice, response.ticketNo, this.state.onLat, this.state.onLong, this.state.offLat, this.state.offLong);
-          if (getTicketsResponse.errorCode === "SUCCESS") {
-            // Safely handle orderList regardless of its current type
-            let existingOrderList = Taro.getStorageSync("orderList");
-            let orderList: string[] = [];
-
-            if (Array.isArray(existingOrderList)) {
-              orderList = existingOrderList;
-            } else if (existingOrderList) {
-              // If it's an object or any other type, convert to array
-              orderList = [String(existingOrderList)];
-            }
-
-            orderList.push(response.orderNo);
-            Taro.setStorageSync("orderList", orderList);
-            Taro.setStorageSync("ticket", getTicketsResponse);
-
-            Taro.showToast({ title: I18n.submitSuccess + ' (测试模式)', icon: "success" });
-            Taro.redirectTo({
-              url: '/pages/order/index'
-            });
-
-            Taro.hideLoading();
-          } else {
-            // Handle getTickets failure in test mode
-            Taro.hideLoading();
-            Taro.showToast({ title: getTicketsResponse.errorMsg || '获取票据失败 (测试模式)', icon: "error" });
+            Taro.showToast({ title: `支付未完成: ${wxPayResponse}`, icon: "none" });
           }
         }
-      }
-      else {
+      } else {
+            // Handle getTickets failure in test mode
         Taro.hideLoading();
-        Taro.showToast({ title: response.errorMsg, icon: "error" })
+        Taro.showToast({ 
+          title: "訂單創建失敗，請稍後再試", 
+          icon: "error",
+          complete: () => {
+            if (isTestMode) {
+              Taro.redirectTo({
+                url: '/pages/index/index'
+              });
+            }
+          }
+        });
       }
 
       //call getTickets 锁票确认
     } catch (error: any) {
-
+      Taro.hideLoading();
       Taro.showToast({ title: I18n.submitFailed, icon: "none" });
       console.error("API Error:", error.message);
     }
@@ -462,7 +584,6 @@ export default class PassengerForm extends Component<{}, State> {
     return (Math.round(total * 100)).toString();
   }
 
-  // Add this helper function in the component or outside if appropriate
   getTicketTypeCount(orderDetails: any[]): string {
     const routeName = orderDetails[0].routeName;
     const typeCount: Record<string, number> = {};
@@ -478,7 +599,7 @@ export default class PassengerForm extends Component<{}, State> {
       `${type}x${count}`
     );
 
-    return routeName + ' ' + typeStrings.join(', ');
+    return routeName + ' ' + typeStrings.join(', ') + ' ' + orderDetails[0].passenger + ' ' + orderDetails[0].runDate + ' ' + orderDetails[0].runTime;
   }
 
   render() {
@@ -502,10 +623,11 @@ export default class PassengerForm extends Component<{}, State> {
             title={'車票詳情'}
           >
             <AtList>
-              <AtListItem className='location-item' title={I18n.departure} extraText={addedTickets?.[0]?.beginStopName || ''} />
+              <AtListItem className='location-item' title={I18n.departureSelected} extraText={addedTickets?.[0]?.beginStopName || ''} />
               <AtListItem title={I18n.address} note={this.state.selectedStartLocationAddress} disabled={false} />
-              <AtListItem className='location-item' title={I18n.destination} extraText={addedTickets?.[0]?.endStopName || ''} />
+              <AtListItem className='location-item' title={I18n.destinationSelected} extraText={addedTickets?.[0]?.endStopName || ''} />
               <AtListItem title={I18n.address} note={this.state.selectedEndLocationAddress} disabled={false} />
+              <AtListItem title={I18n.departureDate} extraText={this.state.departureDate || ''} disabled={false} />
               <AtListItem title={I18n.departureTime} extraText={ticket?.runTime?.substring(0, 5) || ''} disabled={false} />
 
               {

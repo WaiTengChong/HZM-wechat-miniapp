@@ -42,4 +42,5 @@ export interface OrderDetail {
   onLong: string;
   offLat: string;
   offLong: string;
+  wxPay_status: number;
 }

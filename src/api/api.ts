@@ -1,18 +1,16 @@
 import Taro from "@tarojs/taro";
 import axios from "axios";
 import CryptoJS from "Crypto-js";
-import dayjs from "dayjs";
 import md5 from "md5";
 
 import { CancelOrderResponse } from "src/components/cancelOrderAPI";
 import { GetTicketInfoResponse } from "src/components/getTicketInfoAPI";
-import { TicketResponse } from "src/components/getTicketsAPI";
 import { GoodsDetail } from "src/components/orderDetail";
 import { GetOrderInfoResponse } from "src/components/OrderInfoAPI";
 import { ReservationResponse } from "src/components/reservationsAPI";
 import { RemoteSetting } from "../types/remoteSettings";
 
-export const isTestMode = false; // Manually change this to false for production mode
+export const isTestMode = true; // Manually change this to false for production mode
 
 const baseUrl = isTestMode ? "http://localhost:8081/" : "https://weapp.alteronetech.top/";
 
@@ -65,10 +63,12 @@ const makeAPICall = async (
         title: response.data.message,
         icon: "error",
       }).then(() => {
-        Taro.clearStorageSync();
-        Taro.navigateTo({
-          url: "/pages/index/index",
-        });
+        if (response.data.message == "token无效") {
+          Taro.clearStorageSync();
+          Taro.navigateTo({
+            url: "/pages/index/index",
+          });
+        }
       });
       return Promise.reject(response.data.message);
     } else {
@@ -310,9 +310,13 @@ const createReservation = async (
   departure_origin_id: string,
   departure_destination_id: string,
   departure_run_id: string,
-  departure_date: string
+  departure_date: string,
+  onLat: number,
+  onLong: number,
+  offLat: number,
+  offLong: number
 ): Promise<ReservationResponse> => {
-  const encryptedPassengers = encrypt(passengers);
+  const AUTH_TICKET = Taro.getStorageSync("AUTH_TICKET");
   const response = await makeAPICall(
     RESERVATIONS,
     "POST",
@@ -326,6 +330,11 @@ const createReservation = async (
       currency_id: currency_id,
       numbers: numbers,
       departure_run_id: departure_run_id,
+      auth_key: AUTH_TICKET,
+      onLat: onLat.toString(),
+      onLong: onLong.toString(),
+      offLat: offLat.toString(),
+      offLong: offLong.toString(),
     },
     {
       Accept: "*/*",
@@ -343,30 +352,13 @@ const createReservation = async (
 const getTickets = async (
   orderNo: string,
   price: string,
-  trackNo: string,
-  onLat: number,
-  onLong: number,
-  offLat: number,
-  offLong: number
-): Promise<TicketResponse> => {
-  const AUTH_TICKET = Taro.getStorageSync("AUTH_TICKET");
+): Promise<boolean> => {
   const response = await makeAPICall(
     GET_TICKETS,
     "POST",
     {
       OrderNo: orderNo,
       price: price,
-      trackNo: trackNo,
-      showHKCost: "",
-      cash_Price: "",
-      cash_No: "",
-      timestamp: dayjs().unix().toString(),
-      format: "json",
-      auth_key: AUTH_TICKET,
-      onLat: onLat.toString(),
-      onLong: onLong.toString(),
-      offLat: offLat.toString(),
-      offLong: offLong.toString(),
     },
     {
       Accept: "*/*",
@@ -386,7 +378,7 @@ const cancelOrder = async (orderNo: string): Promise<CancelOrderResponse> => {
     CANCEL_ORDER,
     "POST",
     {
-      OrderNo: orderNo,
+      orderNo: orderNo,
       format: "json",
     },
     {

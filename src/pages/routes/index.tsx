@@ -265,7 +265,6 @@ export default class Routes extends Component<{}, State> {
   };
 
   resetSelected = () => {
-    console.log('resetSelected');
     this.setState({
       addedTickets: [],
       ticketQuantities: {},
