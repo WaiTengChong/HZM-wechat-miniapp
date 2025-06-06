@@ -211,6 +211,7 @@ export default class OrderDetail extends React.Component<{}, OrderDetailState> {
             </AtCard>
           </View>
         ))}
+        <View className='back-button-container'>
         <AtButton
           type="primary"
           className="back-button"
@@ -218,6 +219,7 @@ export default class OrderDetail extends React.Component<{}, OrderDetailState> {
         >
           {I18n.back}
         </AtButton>
+        </View>
       </View>
     );
   }

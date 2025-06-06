@@ -189,7 +189,7 @@ export default class TicketListPage extends Component<{}, State> {
                             key={orderNo}
                             open={isOpen}
                             onClick={() => this.handleClick(orderNo)}
-                            title={`${I18n.orderNumber}: ${orderNo}${order ? ` | ${I18n.orderCost}: $${this.formatPrice(order.orderCost)}` : ''}`}
+                            title={`${I18n.orderTime}：${orderNo.substring(0,4)}-${orderNo.substring(4,6)}-${orderNo.substring(6,8)} ${orderNo.substring(8,10)}:${orderNo.substring(10,12)}`}
                         >
                             {isLoading ? (
                                 <View className='loading-container'>
@@ -221,11 +221,11 @@ export default class TicketListPage extends Component<{}, State> {
                                                     <Text className='run-time'>{I18n.departureTime}：{detail.runTime}</Text>
                                                     <Text className='route-text'>{detail.depatureOriginName} → {detail.depatureDestinatName}</Text>
                                                     <View className='board-container' onClick={() => this.openMap(detail.onLat, detail.onLong, detail.onAddress, detail.depatureDestinatName)}>
-                                                        <Text className='on-board-text'><Text style={{ fontWeight: 'bold' }}>{I18n.departure}：</Text>{'\n'}{detail.onAddress}</Text>
+                                                        <Text className='on-board-text'><Text style={{ fontWeight: 'bold' }}>{I18n.departureSelected}：</Text>{'\n'}{detail.onAddress}</Text>
                                                         <AtIcon className='map-pin' value='map-pin' size='30' color='red' />
                                                     </View>
                                                     <View className='board-container' onClick={() => this.openMap(detail.offLat, detail.offLong, detail.offAddress, detail.depatureDestinatName)}>
-                                                        <Text className='off-board-text'><Text style={{ fontWeight: 'bold' }}>{I18n.destination}：</Text>{'\n'}{detail.offAddress}</Text>
+                                                        <Text className='off-board-text'><Text style={{ fontWeight: 'bold' }}>{I18n.destinationSelected}：</Text>{'\n'}{detail.offAddress}</Text>
                                                         <AtIcon className='map-pin' value='map-pin' size='30' color='red' />
                                                     </View>
                                                 </View>

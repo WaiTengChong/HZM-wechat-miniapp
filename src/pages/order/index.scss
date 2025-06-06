@@ -77,6 +77,16 @@
 
 .back-button {
   margin-bottom: 20px;
+  width: 80%;
+}
+
+.back-button-container{
+  padding-top: 50px;
+  padding-bottom: 100px;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
 .depature-info {

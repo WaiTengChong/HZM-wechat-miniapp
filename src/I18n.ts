@@ -40,6 +40,7 @@ export const I18n = new LocalizedStrings({
     loadingEllipsis: "加载中...",
     pleaseSelect: "请选择",
     pleaseSelectNewDate: "请重新选择日期",
+    pleaseSelectDate: "请选择日期",
     submit: "提交",
     pleaseSelectTicket: "请选择一张车票",
     noMoreSeatsAvailable: "没有更多座位可用",
@@ -123,6 +124,7 @@ export const I18n = new LocalizedStrings({
       "旅客须于最少于发车前15分钟，凭QR Code到上车点售票处换取车票。",
     orderSuccess: "订票成功",
     downloading: "下载中",
+    orderTime: "订单时间",
   },
   hk: {
     login: "登入",
@@ -163,6 +165,7 @@ export const I18n = new LocalizedStrings({
     loadingEllipsis: "加載中...",
     pleaseSelect: "請選擇",
     pleaseSelectNewDate: "請重新選擇日期",
+    pleaseSelectDate: "請選擇日期",
     submit: "提交",
     pleaseSelectTicket: "請選擇一張車票",
     noMoreSeatsAvailable: "沒有更多座位可用",
@@ -246,5 +249,6 @@ export const I18n = new LocalizedStrings({
       "旅客須於最少於發車前15分鐘，憑QR Code到上車點售票處換取車票。",
     orderSuccess: "訂票成功",
     downloading: "下載中",
+    orderTime: "訂單時間",
   },
 });

@@ -10,7 +10,7 @@ import { GetOrderInfoResponse } from "src/components/OrderInfoAPI";
 import { ReservationResponse } from "src/components/reservationsAPI";
 import { RemoteSetting } from "../types/remoteSettings";
 
-export const isTestMode = true; // Manually change this to false for production mode
+export const isTestMode = false; // Manually change this to false for production mode
 
 const baseUrl = isTestMode ? "http://localhost:8081/" : "https://weapp.alteronetech.top/";
 
